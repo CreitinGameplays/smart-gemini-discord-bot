@@ -1,0 +1,7 @@
+py-cord
+gradio_client
+groq
+beautifulsoup4
+python-dotenv
+google-generativeai
+aiohttp
