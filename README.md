@@ -19,7 +19,7 @@ This is a Discord bot built using the [py-cord](https://github.com/Pycord-Develo
 1. Clone the repository:
     ```sh
     git clone https://github.com/CreitinGameplays123/smart-gemini-discord-bot.git
-    cd gemini-discord-bot
+    cd smart-gemini-discord-bot
     ```
 
 2. Install the required Python packages:
