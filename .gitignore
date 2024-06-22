@@ -1,0 +1,4 @@
+.env
+chat_history.json
+lm.py
+attachments/*
