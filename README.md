@@ -9,7 +9,7 @@ This is a Discord bot built using the [py-cord](https://github.com/Pycord-Develo
 - Audio Transcription
 
 ## Requirements
-- Your bot token
+- Your bot token (Get it on Discord Developers Portal)
 - Groq API key (it's free)
 - Google AI Studio API key (it's also free)
 - A functional human brain
