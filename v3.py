@@ -38,8 +38,8 @@ todayhour = f'{today.hour}h:{today.minute}m:{today.second}s' # Unused
 # Base system prompt without web search results
 # You can modify this system prompt as needed
 base_system_prompt = f'''
-You are Gemini, a large language model trained by Google AI, based on the "Gemini 1.5 Flash" model. You should always act like a helpful technical AI chatbot. We are interacting on a Discord chat. This means most of the time your lines should be a sentence or two, unless the user's request requires reasoning or long-form outputs.
-You are operating within a Discord bot, and the bot developer is the user "creitingameplays". Chat history will be formatted like "discord_username: (message content)". Never put "discord_username: (message content)" in your answers.
+You are Gemini, a large language model trained by Google AI, based on the "Gemini 1.5 Flash" model. You should always act like a helpful technical AI chatbot. We are interacting on a Discord chat. This means most of the time your lines should be a sentence or two, unless the user's request requires reasoning or long-form outputs. 
+You are operating within a Discord bot, and the bot developer is the user "creitingameplays". Never put "discord_username: (message content)" in your answers.
 Name: Gemini
 Knowledge cutoff: October 26, 2023
 Current date: {todayday}
@@ -53,7 +53,8 @@ You can see usernames from the chat history.
 - Question Answering;
 - Web Search;
 - Image Analysis;
-- Audio Transcription and Answering.
+- Audio Transcription and Answering;
+- Image Generation.
 
 # Tools
 
@@ -68,18 +69,24 @@ Paris is not only the capital of France but also its largest city. It is located
 
 ## Audio capability
 If you don't understand the user's audio message, ask them to resend it.
-IMPORTANT: Only analyze audios if the user explicitly asks you to do so.
+IMPORTANT: Only analyze audios if the user explicitly asks you to do so. If the user sends an audio message, answer the question in it and don't just transcribe it. Think of it as if the audio is going directly to you and you need to answer its question.
 You should also always prioritize the most recent audio message sent by the user, totally ignoring the chat history.
-IMPORTANT: If the user sends an audio message, answer the question in it and don't just transcribe it. Think of it as if the audio is going directly to you and you need to answer its question.
 
 ## Image capability
 Only analyze images if the user explicitly asks you to do so.
 Always prioritize the most recent user-uploaded image.
 
-Always respond with "I'm sorry but I cannot assist you with that." (or a similar message) if the user's message requests dangerous, harmful, adult content, sensitive topics or sexual activities.
+## Image gebneration
+You can generate images using Stable Diffusion 3 Medium. 
+To generate an image, you MUST END your message with the prompt you enhanced, like this generate_img:PROMPT. Tip: Add tags such as "realistic, detailed, photorealistic, 4k, HD" and others to improve the quality of the generated image.
+### Example of image generation.
+You: Sure! I will generate your image:\ngenerate_img: A realistic photo of a colorful garden and birds flying, cinematic, 4k, HD
+
+Respond with "I'm sorry but I cannot assist you with that." (or a similar message) if the user's message requests dangerous, harmful, adult content, sensitive topics or sexual activities.
 '''
 
 client = Client("https://devilent2-whisper-v3-zero.hf.space/--replicas/pvwp9/")
+genimg = Client("CreitinGameplays/stable-diffusion-3-medium")
 
 # This is for web search using audio message
 async def user_audio(filename):
@@ -99,6 +106,27 @@ async def user_audio(filename):
         print(f'Error: {e}')
         error_message = f'Transcription error: {e}'
         return error_message
+
+# generate images with stable diffusion 3
+async def generate_img(img_prompt):
+    job = genimg.submit(
+		    prompt=f"{img_prompt}",
+		    negative_prompt="poorly drawn, low quality, lowres, nsfw",
+		    seed=0,
+		    randomize_seed=True,
+		    width=1024,
+		    height=1024,
+		    guidance_scale=5,
+		    num_inference_steps=30,
+		    api_name="/infer"
+    )
+    
+    while not job.done:
+        await asyncio.sleep(0.1)
+        
+    result = job.result()
+    result = result[0]
+    return result
 
 # Restart function
 async def restart_bot(): 
@@ -252,10 +280,10 @@ Also highly recommended searching in the following circumstances:
 - User explicitly asks YOU to browse or provide links to references.
 Just respond with 'YES' or 'NO' if you think the following user chat history requires an internet search, don't say anything else than that.
 If you believe a search will be necessary, skip a line and generate a search query that you would enter into the DuckDuckGo search engine to find the most relevant information to help you respond.
-Use conversation history to get context for web searches.
+Use conversation history to get context for web searches. Your priority is the last user message.
 Remember that every web search you perform is stateless, meaning you will need to search again if necessary.
 The search query must also be in accordance with the language of the conversation (e.g Portuguese, English, Spanish etc.)
-Keep it simple and short. Always output your search like this: SEARCH:example-search-query. Always put the `SEARCH`. Do not put any slashes in the search query. To choose a specific number of search results this will return, skip another line and put it like this: RESULTS:number, example: RESULTS:5. Always put the `RESULTS`, only works like that. Minimum of 3 and maximum of 15 search results. THIS IS REQUIRED. First is SEARCH, second is RESULTS.
+Keep it simple and short. Always output your search like this: SEARCH:example-search-query. Always put the `SEARCH`. Do not put any slashes in the search query. To choose a specific number of search results this will return, skip another line and put it like this: RESULTS:number, example: RESULTS:5. Always put the `RESULTS`, only works like that. Minimum of 3 and maximum of 20 search results. THIS IS REQUIRED. First is SEARCH, second is RESULTS.
 You should NEVER do a web search if the user's message asks for dangerous, insecure, harmful, +18 (adult content), sexual content and malicious code. Just ignore these types of requests.
 Respond with plain text only. Do not use any markdown formatting. Do not include any text before or after the search query. For normal searches, don't include the "site:".
 Remember! today's date is {todayday}. Always keep this date in mind to provide time-relevant context in your search query.
@@ -470,7 +498,7 @@ My commands:
 - !imgdel: Deletes the current channel image from /attachments folder.
 - !audiodel: Deletes the current channel audio from /attachments folder.
             
-Experimental bot - Requested by {message.author.name} at {todayhour}. V3.0 beta
+Experimental bot - Requested by {message.author.name} at {todayhour}. V3.0.5
             ```
             """
             msg = await message.reply(helpcmd)
@@ -527,6 +555,9 @@ async def handle_message(message):
             else:
                 user_message += ' [User message contains an unsupported file type]'
         
+        # Convert chat history to the desired format, Moved here
+        formatted_history = []
+        web_search = []
         # Check if a web search is needed
         search_query = await needs_search(chat_history, has_attachments, message)
         if search_query:
@@ -547,8 +578,14 @@ async def handle_message(message):
             await bot_message.edit(content='`Searching...` <:checkmark0:1246546819710849144>')
             await asyncio.sleep(0.3)
             await bot_message.edit(content=f'`Reading {num_results} results...` <a:searchingweb:1246248294322147489>')
-            system_prompt += f'\nWeb search results: \n{results}'
-
+            
+            web_search += [{
+                'role': 'model',
+                'parts': [
+                    f'Web search results:\n{results}',
+                ],
+            }]
+            
         # Ensure the attachment task is finished if it was initiated
         if attachment_task:
             await attachment_task
@@ -575,7 +612,7 @@ async def handle_message(message):
                 HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
             }
         )
-
+        
         chat_history_copy = list(channel_histories.get(channel_id, []))  # Make a copy of the deque for safe iteration
 
         async def upload_to_gemini(path, mime_type=None, cache={}):
@@ -610,14 +647,13 @@ async def handle_message(message):
             mime_type2 = 'audio/ogg'
             files2 = await upload_to_gemini(file_path2, mime_type=mime_type2)
     
-        # Convert chat history to the desired format
-        formatted_history = []
         for author, content in chat_history_copy:  # Iterate over the copied list
             formatted_history.append({
                 'role': 'user' if author != 'Gemini' else 'model',
                 'parts': [f'{author}: {content}'],
             })
-    
+        formatted_history += web_search
+        
         if files and not files2:
             formatted_history += [{
                 'role': 'user',
@@ -657,16 +693,29 @@ async def handle_message(message):
         
         full_response = ""
         message_chunks = []  # List to hold messages created/edited
+        generate_img_detected = False
+        img_prompt = ""
 
         # Process the response in real-time
         for chunk in response:
             full_response += chunk.text
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.3)
             new_chunks = split_msg(full_response)
 
             # Remove "Gemini: " from the start of the first chunk if present
             if new_chunks and new_chunks[0].startswith("Gemini: "):
                 new_chunks[0] = new_chunks[0].replace("Gemini: ", "", 1)
+
+            # Fix empty chunks
+            new_chunks = ["‎ " if chunk == "\n" else chunk for chunk in new_chunks]
+
+            # Check if the first chunk contains "generate_img:"
+            if new_chunks and "generate_img:" in new_chunks[0]:
+                generate_img_detected = True
+                img_prompt_start = new_chunks[0].index("generate_img:") + len("generate_img:")
+                img_prompt = new_chunks[0][img_prompt_start:].strip()
+                print(f"Extracted prompt: {img_prompt}")
+                new_chunks[0] = new_chunks[0][:img_prompt_start - len("generate_img:")].strip()
 
             # Create or edit messages based on the new chunks
             for i in range(len(new_chunks)):
@@ -683,12 +732,17 @@ async def handle_message(message):
                         new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
                         message_chunks.append(new_msg)
 
+        # If "generate_img:" was detected, call the generate_img function and send the image
+        if generate_img_detected:
+            generated_image_path = await generate_img(img_prompt)
+            await message.reply(file=discord.File(generated_image_path))
+            await asyncio.sleep(0.5)
+            os.remove(generated_image_path)
+            
         # Finalize all chunks by removing the animation
         for i, msg in enumerate(message_chunks):
             await msg.edit(content=new_chunks[i])
-
-            
-        # Append the bot's message to the chat history
+                # Append the bot's message to the chat history
         channel_histories[channel_id].append(('Gemini', full_response))
 
         await save_chat_history(history_json, message)
