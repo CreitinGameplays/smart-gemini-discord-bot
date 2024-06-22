@@ -26,8 +26,6 @@ bot_token = os.getenv('TOKEN')
 ai_key = os.getenv('GEMINI_KEY')
 groq_token = os.getenv('GROQ_KEY')
 
-# load Llama API 
-API_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-orpo-141b-A35b-v0.1"
 # Some variables you might want to change.
 SEARCH_SNIPPET_SIZE = 6000 # Website content max length size
 MAX_CHAT_HISTORY_MESSAGES = 25 # Max number of messages that will be stored in chat history

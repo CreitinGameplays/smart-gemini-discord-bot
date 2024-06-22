@@ -26,8 +26,6 @@ bot_token = os.getenv('TOKEN')
 ai_key = os.getenv('GEMINI_KEY')
 groq_token = os.getenv('GROQ_KEY')
 
-# load Llama API 
-API_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-orpo-141b-A35b-v0.1"
 # Some variables you might want to change.
 SEARCH_SNIPPET_SIZE = 6000 # Website content max length size
 MAX_CHAT_HISTORY_MESSAGES = 25 # Max number of messages that will be stored in chat history
@@ -506,7 +504,7 @@ async def handle_message(message):
         async with message.channel.typing():
             await asyncio.sleep(1)
             bot_message = await message.reply('<a:generating:1246530696168734740> _ _')
-            await asyncio.sleep(0.3)
+            await asyncio.sleep(0.1)
 
         system_prompt = base_system_prompt
 
@@ -663,6 +661,7 @@ async def handle_message(message):
         # Process the response in real-time
         for chunk in response:
             full_response += chunk.text
+            await asyncio.sleep(0.5)
             new_chunks = split_msg(full_response)
 
             # Remove "Gemini: " from the start of the first chunk if present
