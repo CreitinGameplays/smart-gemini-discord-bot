@@ -7,6 +7,7 @@ This is a Discord bot built using the [py-cord](https://github.com/Pycord-Develo
 - Web Search (Using Llama 3 70b from Groq)
 - Image Analysis
 - Audio Transcription
+- Generate images
 
 ## Requirements
 - Your bot token (Get it on Discord Developers Portal)
