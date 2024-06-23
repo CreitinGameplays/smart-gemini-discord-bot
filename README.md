@@ -2,7 +2,7 @@
 
 This is a Discord bot built using the [py-cord](https://github.com/Pycord-Development/pycord)
 
-## It also can
+## It can
 
 - Web Search (Using Llama 3 70b from Groq)
 - Image Analysis
