@@ -128,7 +128,7 @@ async def generate_img(img_prompt):
         return error
         
 # Restart function
-async def restart_bot(message):
+async def restart_bot():
     os.execv(sys.executable, ['python'] + sys.argv)
     print('Restarted!')
     
