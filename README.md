@@ -13,7 +13,9 @@ This is a Discord bot built using the [py-cord](https://github.com/Pycord-Develo
 - Groq API key (it's free)
 - Google AI Studio API key (it's also free)
 - A functional human brain
-  
+
+Note: `v3_dalle.py` uses DALL•E 3 for generating images, means you'll need an OpenAI API Key + waste some money with DALL•E 3. `v3.py` uses Stable Diffusion 3 Medium, this one is free.
+
 ## Installation
 
 1. Clone the repository:
