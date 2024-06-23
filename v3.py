@@ -10,7 +10,7 @@ from collections import defaultdict, deque
 from bs4 import BeautifulSoup
 import aiohttp
 import datetime
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 import json
 import re
 from groq import Groq
@@ -18,13 +18,13 @@ from gradio_client import Client
 
 import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
+from duckduckgo_search import DDGS
 
-load_dotenv()
-
-# Token and API keys
-bot_token = os.getenv('TOKEN')
-ai_key = os.getenv('GEMINI_KEY')
-groq_token = os.getenv('GROQ_KEY')
+# load .env
+config = dotenv_values(".env")
+bot_token = config.get('TOKEN')
+ai_key = config.get('GEMINI_KEY')
+groq_token = config.get('GROQ_KEY')
 
 # Some variables you might want to change.
 SEARCH_SNIPPET_SIZE = 6000 # Website content max length size
@@ -33,7 +33,6 @@ MAX_CHAT_HISTORY_MESSAGES = 25 # Max number of messages that will be stored in c
 # Get today's date and format it
 today = datetime.datetime.now()
 todayday = f'{today.strftime("%A")}, {today.month}/{today.day}/{today.year}'
-todayhour = f'{today.hour}h:{today.minute}m:{today.second}s' # Unused 
 
 # Base system prompt without web search results
 # You can modify this system prompt as needed
@@ -78,7 +77,7 @@ Always prioritize the most recent user-uploaded image.
 
 ## Image gebneration
 You can generate images using Stable Diffusion 3 Medium. 
-To generate an image, you MUST END your message with the prompt you enhanced, like this generate_img:PROMPT. Tip: Add tags such as "realistic, detailed, photorealistic, 4k, HD" and others to improve the quality of the generated image.
+To generate an image, you MUST END your message with the prompt you enhanced, like this: generate_img:PROMPT. Tip: Add tags such as "realistic, detailed, photorealistic, HD" and others to improve the quality of the generated image. Put as much detail as possible in the prompt. When you are listing the chat history messages, NEVER say 'generate_img'.
 ### Example of image generation:
 Sure! I will generate your image with the prompt "your-prompt":\ngenerate_img: A realistic photo of a colorful garden and birds flying, cinematic, 4k, HD
 
@@ -86,7 +85,7 @@ Respond with "I'm sorry but I cannot assist you with that." (or a similar messag
 '''
 
 client = Client("https://devilent2-whisper-v3-zero.hf.space/--replicas/pvwp9/")
-genimg = Client("CreitinGameplays/stable-diffusion-3-medium")
+genimg = Client("ameerazam08/SD-3-Medium-GPU")
 
 # This is for web search using audio message
 async def user_audio(filename):
@@ -107,27 +106,36 @@ async def user_audio(filename):
         error_message = f'Transcription error: {e}'
         return error_message
 
-# generate images with stable diffusion 3
+# generate images with stable diffusion 3 medium
 async def generate_img(img_prompt):
-    job = genimg.submit(
+    try:
+        job = genimg.submit(
 		    prompt=f"{img_prompt}",
-		    negative_prompt="poorly drawn, low quality, lowres, nsfw, bad, ugly, aberration",
+		    negative_prompt="deformed, distorted, disfigured, poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, mutated hands and fingers, disconnected limbs, mutation, mutated, ugly, disgusting, blurry, amputation, NSFW",
+		    use_negative_prompt=True,
 		    seed=0,
-		    randomize_seed=True,
 		    width=1024,
 		    height=1024,
-		    guidance_scale=5,
-		    num_inference_steps=30,
-		    api_name="/infer"
-    )
-    
-    while not job.done:
-        await asyncio.sleep(0.1)
+		    guidance_scale=7,
+		    randomize_seed=True,
+		    num_inference_steps=50,
+		    NUM_IMAGES_PER_PROMPT=1,
+		    api_name="/run"
+		)
         
-    result = job.result()
-    result = result[0]
-    return result
-
+        while not job.done:
+            await asyncio.sleep(0.1)
+        
+        result = job.result()
+        result = result[0]['image']
+        print(result)
+        return result
+        
+    except Exception as e:
+        print(e)
+        error = "An error occurred while generating your image. Please try again later."
+        return error
+        
 # Restart function
 async def restart_bot(): 
     os.execv(sys.executable, ['python'] + sys.argv)
@@ -188,28 +196,20 @@ def split_msg(string, chunk_size=1500):
 # Use a dictionary to maintain chat history per channel
 channel_histories = defaultdict(lambda: deque(maxlen=MAX_CHAT_HISTORY_MESSAGES))
 
-async def save_chat_history(history_json, message):
-    filename = history_json
-    chat_history_by_channel = {}
-
-    for channel_id, history in channel_histories.items():
-        formatted_history = []
-        
-        for author, content in history:
-            parts = [f'{author}: {content}']
-                
-            base_message = {
+async def save_chat_history(history_json):
+    chat_history_by_channel = {
+        channel_id: [
+            {
                 'role': 'user' if author != 'Gemini' else 'model',
-                'parts': parts
+                'parts': [f'{author}: {content}']
             }
-            
-            formatted_history.append(base_message)
-            
-        chat_history_by_channel[channel_id] = formatted_history
+            for author, content in history
+        ]
+        for channel_id, history in channel_histories.items()
+    }
 
-    async with aiofiles.open(filename, 'w') as f:
+    async with aiofiles.open(history_json, 'w') as f:
         await f.write(json.dumps(chat_history_by_channel, indent=4))
-    await asyncio.sleep(0.1)    
         
 # Load chat history from a file
 def load_chat_history(filename='chat_history.json'):
@@ -247,8 +247,6 @@ async def upload_and_save_file(attachment, channel_id):
         await f.write(await attachment.read())
     
     return filepath    
-    
-# Updated generate_response function
     
 # check using Llama 3
 async def needs_search(message_content, has_attachments, message):
@@ -328,29 +326,11 @@ Focus on generating the single most relevant search query you can think of to ad
     
     return None
 
+# optimized
 async def search_duckduckgo(search_query):
-    # search_query = search_query.replace(" ", "+").strip()
-    url = f'https://html.duckduckgo.com/html/search?q={search_query}'
-    
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/95.0'
-    }
-    
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers=headers) as response:
-            if response.status != 200:
-                return f'Error: Unable to fetch results (status code {response.status})'
-            
-            text = await response.text()
-            soup = BeautifulSoup(text, 'html.parser')
-            results = soup.find_all('a', class_='result__a')
-            search_results = []
-            for result in results:
-                title = result.get_text()
-                link = result['href']
-                search_results.append({'title': title, 'link': link})
-
-            return search_results
+    results = DDGS().text(f"{search_query}", max_results=25)
+    search_results =  [{'title': res['title'], 'link': res['href']} for res in results]
+    return search_results
 
 async def fetch_snippet(url, max_length=SEARCH_SNIPPET_SIZE):
     try:
@@ -498,7 +478,7 @@ My commands:
 - !imgdel: Deletes the current channel image from /attachments folder.
 - !audiodel: Deletes the current channel audio from /attachments folder.
             
-Experimental bot - Requested by {message.author.name} at {todayhour}. V3.0.5
+Experimental bot - Requested by {message.author.name} at {todayhour}. V3.1.0
             ```
             """
             msg = await message.reply(helpcmd)
@@ -519,7 +499,7 @@ async def handle_message(message):
         channel_id = message.channel.id
         channel_histories[channel_id].append((message.author.name, message.content))
         # save chat history
-        await save_chat_history(history_json, message)
+        await save_chat_history(history_json)
         
         # Check for attachments
         has_attachments = bool(message.attachments)
@@ -702,9 +682,9 @@ async def handle_message(message):
             await asyncio.sleep(0.3)
             new_chunks = split_msg(full_response)
 
-            # Remove "Gemini: " from the start of the first chunk if present
-            if new_chunks and new_chunks[0].startswith("Gemini: "):
-                new_chunks[0] = new_chunks[0].replace("Gemini: ", "", 1)
+            # Remove "Gemini:" from the start of the first chunk if present
+            if new_chunks and new_chunks[0].startswith("Gemini:"):
+                new_chunks[0] = new_chunks[0].replace("Gemini:", "", 1)
 
             # Fix empty chunks
             new_chunks = ["‎ " if chunk == "\n" else chunk for chunk in new_chunks]
@@ -745,7 +725,7 @@ async def handle_message(message):
                 # Append the bot's message to the chat history
         channel_histories[channel_id].append(('Gemini', full_response))
 
-        await save_chat_history(history_json, message)
+        await save_chat_history(history_json)
             
     except Exception as e:
         print(f'Error handling message: {e}')

@@ -10,7 +10,7 @@ from collections import defaultdict, deque
 from bs4 import BeautifulSoup
 import aiohttp
 import datetime
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 import json
 import re
 from groq import Groq
@@ -19,15 +19,15 @@ from gradio_client import Client
 import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 
+# ClosedAI
 from openai import OpenAI
 oclient = OpenAI()
 
-load_dotenv() 
-
-# Token and API keys
-bot_token = os.getenv('TOKEN')
-ai_key = os.getenv('GEMINI_KEY')
-groq_token = os.getenv('GROQ_KEY')
+# load .env
+config = dotenv_values(".env")
+bot_token = config.get('TOKEN')
+ai_key = config.get('GEMINI_KEY')
+groq_token = config.get('GROQ_KEY')
 
 # Some variables you might want to change.
 SEARCH_SNIPPET_SIZE = 6000 # Website content max length size
@@ -36,7 +36,6 @@ MAX_CHAT_HISTORY_MESSAGES = 25 # Max number of messages that will be stored in c
 # Get today's date and format it
 today = datetime.datetime.now()
 todayday = f'{today.strftime("%A")}, {today.month}/{today.day}/{today.year}'
-todayhour = f'{today.hour}h:{today.minute}m:{today.second}s' # Unused 
 
 # Base system prompt without web search results
 # You can modify this system prompt as needed
@@ -81,7 +80,7 @@ Always prioritize the most recent user-uploaded image.
 
 ## Image generation capability
 You can generate images using OpenAI's DALL·E 3 model.
-To generate an image, you MUST end your message with the prompt you enhanced, like this: generate_img:PROMPT. Tip: add tags such as "realistic, detailed, photorealistic, masterpiece, HD" and others tags to improve the quality of the generated image. Put as much detail as possible in the prompt.
+To generate an image, you MUST end your message with the prompt you enhanced, like this: generate_img:PROMPT. Tip: add to the prompt tags such as "realistic, detailed, photorealistic, masterpiece, HD" and others tags to improve the quality of the generated image. Put as much detail as possible in the prompt. When you are listing the chat history messages, NEVER say 'generate_img'.
 ### Example of image generation response.
 Your response should be like this:
 Sure! I will generate your image with the prompt "your-prompt":\ngenerate_img: A realistic photo of a colorful garden and birds flying, cinematic, 4k, HD
@@ -187,28 +186,20 @@ def split_msg(string, chunk_size=1500):
 # Use a dictionary to maintain chat history per channel
 channel_histories = defaultdict(lambda: deque(maxlen=MAX_CHAT_HISTORY_MESSAGES))
 
-async def save_chat_history(history_json, message):
-    filename = history_json
-    chat_history_by_channel = {}
-
-    for channel_id, history in channel_histories.items():
-        formatted_history = []
-        
-        for author, content in history:
-            parts = [f'{author}: {content}']
-                
-            base_message = {
+async def save_chat_history(history_json):
+    chat_history_by_channel = {
+        channel_id: [
+            {
                 'role': 'user' if author != 'Gemini' else 'model',
-                'parts': parts
+                'parts': [f'{author}: {content}']
             }
-            
-            formatted_history.append(base_message)
-            
-        chat_history_by_channel[channel_id] = formatted_history
+            for author, content in history
+        ]
+        for channel_id, history in channel_histories.items()
+    }
 
-    async with aiofiles.open(filename, 'w') as f:
+    async with aiofiles.open(history_json, 'w') as f:
         await f.write(json.dumps(chat_history_by_channel, indent=4))
-    await asyncio.sleep(0.1)    
         
 # Load chat history from a file
 def load_chat_history(filename='chat_history.json'):
@@ -325,29 +316,11 @@ Focus on generating the single most relevant search query you can think of to ad
     
     return None
 
+# optimized
 async def search_duckduckgo(search_query):
-    # search_query = search_query.replace(" ", "+").strip()
-    url = f'https://html.duckduckgo.com/html/search?q={search_query}'
-    
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/95.0'
-    }
-    
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers=headers) as response:
-            if response.status != 200:
-                return f'Error: Unable to fetch results (status code {response.status})'
-            
-            text = await response.text()
-            soup = BeautifulSoup(text, 'html.parser')
-            results = soup.find_all('a', class_='result__a')
-            search_results = []
-            for result in results:
-                title = result.get_text()
-                link = result['href']
-                search_results.append({'title': title, 'link': link})
-
-            return search_results
+    results = DDGS().text(f"{search_query}", max_results=25)
+    search_results =  [{'title': res['title'], 'link': res['href']} for res in results]
+    return search_results
 
 async def fetch_snippet(url, max_length=SEARCH_SNIPPET_SIZE):
     try:
@@ -496,7 +469,7 @@ My commands:
 - !imgdel: Deletes the current channel image from /attachments folder.
 - !audiodel: Deletes the current channel audio from /attachments folder.
             
-Experimental bot - Requested by {message.author.name} at {todayhour}. V3.0.5-dalle
+Experimental bot - Requested by {message.author.name} at {todayhour}. V3.1.0-dalle
             ```
             """
             msg = await message.reply(helpcmd)
