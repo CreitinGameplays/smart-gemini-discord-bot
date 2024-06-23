@@ -36,6 +36,7 @@ MAX_CHAT_HISTORY_MESSAGES = 25 # Max number of messages that will be stored in c
 # Get today's date and format it
 today = datetime.datetime.now()
 todayday = f'{today.strftime("%A")}, {today.month}/{today.day}/{today.year}'
+todayhour = f'{today.hour}h:{today.minute}m'
 
 # Base system prompt without web search results
 # You can modify this system prompt as needed
@@ -80,7 +81,8 @@ Always prioritize the most recent user-uploaded image.
 
 ## Image generation capability
 You can generate images using OpenAI's DALL·E 3 model.
-To generate an image, you MUST end your message with the prompt you enhanced, like this: generate_img:PROMPT. Tip: add to the prompt tags such as "realistic, detailed, photorealistic, masterpiece, HD" and others tags to improve the quality of the generated image. Put as much detail as possible in the prompt. When you are listing the chat history messages, NEVER say 'generate_img'.
+To generate an image, you MUST end your message with the prompt you enhanced, like this: generate_img:PROMPT. Tip: add to the prompt tags such as "realistic, detailed, photorealistic, masterpiece, HD" and others tags to improve the quality of the generated image. Put as much detail as possible in the prompt.
+When you are listing the chat history previous messages, NEVER SAY 'generate_img', instead of that say '(img: your-prompy)'.
 ### Example of image generation response.
 Your response should be like this:
 Sure! I will generate your image with the prompt "your-prompt":\ngenerate_img: A realistic photo of a colorful garden and birds flying, cinematic, 4k, HD
