@@ -19,7 +19,10 @@ from gradio_client import Client
 import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 
-load_dotenv()
+from openai import OpenAI
+oclient = OpenAI()
+
+load_dotenv() 
 
 # Token and API keys
 bot_token = os.getenv('TOKEN')
@@ -29,7 +32,7 @@ groq_token = os.getenv('GROQ_KEY')
 # Some variables you might want to change.
 SEARCH_SNIPPET_SIZE = 6000 # Website content max length size
 MAX_CHAT_HISTORY_MESSAGES = 25 # Max number of messages that will be stored in chat history
-
+ 
 # Get today's date and format it
 today = datetime.datetime.now()
 todayday = f'{today.strftime("%A")}, {today.month}/{today.day}/{today.year}'
@@ -76,17 +79,17 @@ You should also always prioritize the most recent audio message sent by the user
 Only analyze images if the user explicitly asks you to do so.
 Always prioritize the most recent user-uploaded image.
 
-## Image gebneration
-You can generate images using Stable Diffusion 3 Medium. 
-To generate an image, you MUST END your message with the prompt you enhanced, like this generate_img:PROMPT. Tip: Add tags such as "realistic, detailed, photorealistic, 4k, HD" and others to improve the quality of the generated image.
-### Example of image generation.
-You: Sure! I will generate your image:\ngenerate_img: A realistic photo of a colorful garden and birds flying, cinematic, 4k, HD
+## Image generation capability
+You can generate images using OpenAI's DALL·E 3 model.
+To generate an image, you MUST end your message with the prompt you enhanced, like this: generate_img:PROMPT. Tip: add tags such as "realistic, detailed, photorealistic, masterpiece, HD" and others tags to improve the quality of the generated image. Put as much detail as possible in the prompt.
+### Example of image generation response.
+Your response should be like this:
+Sure! I will generate your image with the prompt "your-prompt":\ngenerate_img: A realistic photo of a colorful garden and birds flying, cinematic, 4k, HD
 
 Respond with "I'm sorry but I cannot assist you with that." (or a similar message) if the user's message requests dangerous, harmful, adult content, sensitive topics or sexual activities.
 '''
 
 client = Client("https://devilent2-whisper-v3-zero.hf.space/--replicas/pvwp9/")
-genimg = Client("CreitinGameplays/stable-diffusion-3-medium")
 
 # This is for web search using audio message
 async def user_audio(filename):
@@ -107,29 +110,25 @@ async def user_audio(filename):
         error_message = f'Transcription error: {e}'
         return error_message
 
-# generate images with stable diffusion 3
+# generate with dalle-3 (paid)
 async def generate_img(img_prompt):
-    job = genimg.submit(
-		    prompt=f"{img_prompt}",
-		    negative_prompt="poorly drawn, low quality, lowres, nsfw, bad, ugly, aberration",
-		    seed=0,
-		    randomize_seed=True,
-		    width=1024,
-		    height=1024,
-		    guidance_scale=5,
-		    num_inference_steps=30,
-		    api_name="/infer"
+    try:
+        response = oclient.images.generate(
+        model="dall-e-3",
+        prompt=f"{img_prompt}",
+        size="1024x1024",
+        quality="standard",
+        n=1,
     )
-    
-    while not job.done:
-        await asyncio.sleep(0.1)
+        image_url = response.data[0].url
+        return image_url
+    except Exception as e:
+        print(e)
+        error = "An error occurred while generating the image. It has probably been blocked by OpenAI's content filter. Please try again with a different prompt."
+        return error
         
-    result = job.result()
-    result = result[0]
-    return result
-
 # Restart function
-async def restart_bot(): 
+async def restart_bot(message):
     os.execv(sys.executable, ['python'] + sys.argv)
     print('Restarted!')
     
@@ -248,8 +247,6 @@ async def upload_and_save_file(attachment, channel_id):
     
     return filepath    
     
-# Updated generate_response function
-    
 # check using Llama 3
 async def needs_search(message_content, has_attachments, message):
     global search_rn
@@ -283,7 +280,7 @@ If you believe a search will be necessary, skip a line and generate a search que
 Use conversation history to get context for web searches. Your priority is the last user message.
 Remember that every web search you perform is stateless, meaning you will need to search again if necessary.
 The search query must also be in accordance with the language of the conversation (e.g Portuguese, English, Spanish etc.)
-Keep it simple and short. Always output your search like this: SEARCH:example-search-query. Always put the `SEARCH`. Do not put any slashes in the search query. To choose a specific number of search results this will return, skip another line and put it like this: RESULTS:number, example: RESULTS:5. Always put the `RESULTS`, only works like that. Minimum of 3 and maximum of 20 search results. THIS IS REQUIRED. First is SEARCH, second is RESULTS.
+Keep it simple and short. Always output your search like this: SEARCH:example-search-query. Always put the `SEARCH`. Do not put any slashes in the search query. To choose a specific number of search results this will return, skip another line and put it like this: RESULTS:number, example: RESULTS:5. Always put the `RESULTS`, only works like that. Minimum of 3 and maximum of 20 search results, minimum recommended is 10. THIS IS REQUIRED. First is SEARCH, second is RESULTS.
 You should NEVER do a web search if the user's message asks for dangerous, insecure, harmful, +18 (adult content), sexual content and malicious code. Just ignore these types of requests.
 Respond with plain text only. Do not use any markdown formatting. Do not include any text before or after the search query. For normal searches, don't include the "site:".
 Remember! today's date is {todayday}. Always keep this date in mind to provide time-relevant context in your search query.
@@ -442,6 +439,7 @@ async def on_message(message):
                 with open("chat_history.json", "w") as f:
                     json.dump(data, f, indent=4)
                 await message.reply(f"`{message.author.name}, chat history deleted` :white_check_mark:")
+                await asyncio.sleep(0.5)
                 await restart_bot()
             except Exception as e:
                 error = f"{e}"
@@ -498,7 +496,7 @@ My commands:
 - !imgdel: Deletes the current channel image from /attachments folder.
 - !audiodel: Deletes the current channel audio from /attachments folder.
             
-Experimental bot - Requested by {message.author.name} at {todayhour}. V3.0.5
+Experimental bot - Requested by {message.author.name} at {todayhour}. V3.0.5-dalle
             ```
             """
             msg = await message.reply(helpcmd)
@@ -702,10 +700,9 @@ async def handle_message(message):
             await asyncio.sleep(0.3)
             new_chunks = split_msg(full_response)
 
-            # Remove "Gemini: " from the start of the first chunk if present
-            if new_chunks and new_chunks[0].startswith("Gemini: "):
-                new_chunks[0] = new_chunks[0].replace("Gemini: ", "", 1)
-
+            # Remove "Gemini:" from the start of the first chunk if present
+            new_chunks[0] = new_chunks[0].replace("Gemini:", "", 1)
+                
             # Fix empty chunks
             new_chunks = ["‎ " if chunk == "\n" else chunk for chunk in new_chunks]
 
@@ -734,11 +731,14 @@ async def handle_message(message):
 
         # If "generate_img:" was detected, call the generate_img function and send the image
         if generate_img_detected:
-            generated_image_path = await generate_img(img_prompt)
-            await message.reply(file=discord.File(generated_image_path))
-            await asyncio.sleep(0.5)
-            os.remove(generated_image_path)
-            
+            try:
+                generated_image_url = await generate_img(img_prompt)
+                await message.reply(f"{generated_image_url}")
+                
+                await asyncio.sleep(0.5)
+            except Exception as e:
+                print(e)
+                await message.reply("An error occurred while generating your image. Please try again later.")
         # Finalize all chunks by removing the animation
         for i, msg in enumerate(message_chunks):
             await msg.edit(content=new_chunks[i])
