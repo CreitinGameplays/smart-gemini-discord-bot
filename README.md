@@ -47,13 +47,12 @@ chmod +x start.sh
 
 ## Bot Commands
 
-- `!del` - Deletes the current channel chat history from the JSON file.
+- `!del` - Deletes the current channel chat history from the JSON file (not available in `v3.2.py`).
 - `!k` - Kills the bot process.
 - `!r` - Restarts the bot.
 - `!imgdel` - Deletes the current channel image from the `attachments` folder.
 - `!audiodel` - Deletes the current channel audio from the `attachments` folder.
 - `!h` - Displays the help command with available bot commands.
-- 
 
 ## License
 
