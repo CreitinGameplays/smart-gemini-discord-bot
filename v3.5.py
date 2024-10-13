@@ -14,7 +14,6 @@ from dotenv import dotenv_values
 import json
 import re
 from groq import Groq
-from gradio_client import Client, handle_file
 import shutil
 import time
 from PIL import Image
@@ -32,6 +31,8 @@ groq_token = config.get('GROQ_KEY')
 hf_token = config.get('HF_TOKEN')
 
 API_URL = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell"
+
+API_URL2 = "https://api-inference.huggingface.co/models/openai/whisper-large-v3-turbo"
 
 # Some variables you might want to change.
 SEARCH_SNIPPET_SIZE = 5000 # Website content max length size
@@ -100,27 +101,23 @@ Respond with "I'm sorry but I cannot assist you with that." (or a similar messag
 Keep in mind that you are a model still in development, this means you may make mistakes in your answer.
 '''
 
-client = Client("hf-audio/whisper-large-v3")
-
-# This is for web search using audio message
-async def user_audio(filename):
+# Web search with audio message
+async def user_audio(file_attachment):
+    headers = {"Authorization": f"Bearer {hf_token}", "x-use-cache": "false"}
+    data = await file_attachment.read()
+    
     try:
-        job = client.submit(
-            inputs=handle_file(f"{filename}"),
-            task="transcribe",
-            api_name="/predict_1"
-        )
-        while not job.done():
-            await asyncio.sleep(0.1)
-            
-        response_text = job.result()
-        return response_text 
-        
+        async with aiohttp.ClientSession() as session:
+            async with session.post(API_URL2, headers=headers, data=data) as response:
+                response_text = await response.json()
+                print(response_text)
+                return response_text
+                
     except Exception as e:
         print(f'Error: {e}')
         error_message = f'Transcription error: {e}'
         return error_message
-
+        
 # image generation 
 async def generate_img(img_prompt):
     headers = {"Authorization": f"Bearer {hf_token}", "x-use-cache": "false"}
@@ -272,7 +269,7 @@ Just respond with 'YES' or 'NO' if you think the following user chat history req
 If you believe a search will be necessary, skip a line and generate a search query that you would enter into the DuckDuckGo search engine to find the most relevant information to help you respond.
 Use conversation history to get context for web searches. Your priority is the last user message.
 Remember that every web search you perform is stateless, meaning you will need to search again if necessary.
-The search query must also be in accordance with the language of the conversation (e.g Portuguese, English, Spanish etc.)
+The search query MUST BE all lowercase. The search query must also be in accordance with the language of the conversation (e.g Portuguese, English, Spanish etc.)
 Keep it simple and short. Always output your search like this: SEARCH:example-search-query. Always put the `SEARCH`. Do not put any slashes in the search query. To choose a specific number of search results this will return, skip another line and put it like this: RESULTS:number, example: RESULTS:5. Always put the `RESULTS`, only works like that. Minimum of 5 and maximum of 25 search results, the minimum recommended is 15 search results. THIS IS REQUIRED. First is SEARCH, second is RESULTS.
 You should NEVER do a web search if the user's message asks for dangerous, insecure, harmful, +18 (adult content), sexual content and malicious code. Just ignore these types of requests.
 Respond with plain text only. Do not use any markdown formatting. Do not include any text before or after the search query. For normal searches, don't include the "site:".
@@ -320,58 +317,50 @@ Default is not web searching when user asks the model to generate images.
     
     return None
 
-# optimized (this shit aint working properly)
-"""
-async def search_duckduckgo(search_query):
-    results = DDGS().text(f"{search_query}", max_results=25)
-    search_results =  [{'title': res['title'], 'link': res['href']} for res in results]
-    return search_results
-"""
-
-async def search_duckduckgo(search_query):
-    # search_query = search_query.replace(" ", "+").strip()
+# Web search optimization
+async def search_duckduckgo(search_query, session):
+    search_query = search_query[0]
+    search_query = search_query.replace(" ", "+").strip()
     url = f'https://html.duckduckgo.com/html/search?q={search_query}'
     
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/95.0'
     }
     
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers=headers) as response:
-            if response.status != 200:
-                return f'Error: Unable to fetch results (status code {response.status})'
-            
-            text = await response.text()
-            soup = BeautifulSoup(text, 'html.parser')
-            results = soup.find_all('a', class_='result__a')
-            search_results = []
-            for result in results:
-                title = result.get_text()
-                link = result['href']
-                search_results.append({'title': title, 'link': link})
+    async with session.get(url, headers=headers) as response:
+        if response.status != 200:
+            return f'Error: Unable to fetch results (status code {response.status})'
+        
+        text = await response.text()
+        soup = BeautifulSoup(text, 'html.parser')
+        results = soup.find_all('a', class_='result__a')
+        search_results = []
+        for result in results:
+            title = result.get_text()
+            link = result['href']
+            search_results.append({'title': title, 'link': link})
 
-            return search_results
+        return search_results
 
-async def fetch_snippet(url, max_length=SEARCH_SNIPPET_SIZE):
+async def fetch_snippet(url, session, max_length=SEARCH_SNIPPET_SIZE):
     try:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/99.0'
         }
         
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers) as response:
-                if response.status != 200:
-                    return f'Error: Unable to fetch content from {url} (status code {response.status})'
-                
-                text = await response.text()
-                soup = BeautifulSoup(text, 'html.parser')
-                paragraphs = soup.find_all('p')
-                content = ' '.join([para.get_text() for para in paragraphs])
-                
-                if len(content) > max_length:
-                    return content[:max_length] + '...'
-                else:
-                    return content
+        async with session.get(url, headers=headers) as response:
+            if response.status != 200:
+                return f'Error: Unable to fetch content from {url} (status code {response.status})'
+            
+            text = await response.text()
+            soup = BeautifulSoup(text, 'html.parser')
+            paragraphs = soup.find_all('p')
+            content = ' '.join([para.get_text() for para in paragraphs])
+            
+            if len(content) > max_length:
+                return content[:max_length] + '...'
+            else:
+                return content
     
     except Exception as e:
         return f'Error: Unable to fetch content from {url} ({str(e)})'
@@ -379,18 +368,31 @@ async def fetch_snippet(url, max_length=SEARCH_SNIPPET_SIZE):
 async def search(search_query):
     global search_rn
     search_rn = int(search_rn)
-    results = await search_duckduckgo(search_query)
-    results_output = []
-    for i, result in enumerate(results[:search_rn]):
-        snippet = await fetch_snippet(result['link'])
-        result_str = f'{i+1}. Title: {result["title"]}\nLink: {result["link"]}\nSnippet: {snippet}\n'
-        results_output.append(result_str)
+    
+    # Reuse the same session for both search and snippet fetching
+    async with aiohttp.ClientSession() as session:
+        # Fetch search results
+        results = await search_duckduckgo(search_query, session)
+        results_output = []
         
-    results_output_str = '\n'.join(results_output)
-    
-    print(results_output_str)
-    return results_output_str
-    
+        # Limit results to `search_rn`
+        limited_results = results[:search_rn]
+        
+        # Concurrently fetch all snippets
+        snippet_tasks = [
+            fetch_snippet(result['link'], session) for result in limited_results
+        ]
+        snippets = await asyncio.gather(*snippet_tasks)
+        
+        # Combine search results with fetched snippets
+        for i, (result, snippet) in enumerate(zip(limited_results, snippets)):
+            result_str = f'{i+1}. Title: {result["title"]}\nLink: {result["link"]}\nSnippet: {snippet}\n'
+            results_output.append(result_str)
+        
+        results_output_str = '\n'.join(results_output)
+        print(results_output_str)
+        return results_output_str
+        
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user}!')
@@ -488,7 +490,7 @@ My commands:
 - !audiodel: Deletes the current channel audio from /attachments folder. (DEV ONLY)
 - !txtdel: Deletes the current channel text from /attachments folder. (DEV ONLY)
             
-Experimental bot - Requested by {message.author.name} at {todayhour}. V3.2.15
+Experimental bot - Requested by {message.author.name} at {todayhour}. V3.5.05
             ```
             """
             msg = await message.reply(helpcmd)
@@ -834,6 +836,4 @@ try:
 except Exception as e:
     print(f'Error starting the bot: {e}')
     
-# damn this code is pretty big :skull: - Creitin
-# update june 23, :sob: - Creitin
-# holy
+# oh man
