@@ -14,11 +14,12 @@ from dotenv import dotenv_values
 import json
 import re
 from groq import Groq
-from gradio_client import Client
+from gradio_client import Client, handle_file
 import shutil
 import time
 
 import google.generativeai as genai
+
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from duckduckgo_search import DDGS
 
@@ -27,9 +28,12 @@ config = dotenv_values(".env")
 bot_token = config.get('TOKEN')
 ai_key = config.get('GEMINI_KEY')
 groq_token = config.get('GROQ_KEY')
+hf_token = config.get('HF_TOKEN')
+
+API_URL = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell"
 
 # Some variables you might want to change.
-SEARCH_SNIPPET_SIZE = 6000 # Website content max length size
+SEARCH_SNIPPET_SIZE = 5000 # Website content max length size
 MAX_CHAT_HISTORY_MESSAGES = 25 # Max number of messages that will be stored in chat history
 
 # Get today's date and format it
@@ -40,10 +44,10 @@ todayhour = f'{today.hour}h:{today.minute}m'
 # Base system prompt without web search results
 # You can modify this system prompt as needed
 base_system_prompt = f'''
-You are Gemini, a large language model trained by Google AI, based on the "Gemini 1.5 Flash" model. You should always act like a helpful technical AI chatbot. We are interacting on a Discord chat. This means most of the time your lines should be a sentence or two, unless the user's request requires reasoning or long-form outputs. 
+You are Gemini, a large language model trained by Google AI, based on the Gemini 1.5 Flash model. We are interacting on a Discord chat. This means most of the time your lines should be a sentence or two, unless the user's request requires reasoning or long-form outputs. Never use emojis, unless explicitly asked to. 
 You are operating within a Discord bot, and the bot developer is the user "creitingameplays". Never put "discord_username: (message content)" in your answers.
 Name: Gemini
-Knowledge cutoff: October 26, 2023
+Knowledge cutoff: Unknown
 Current date: {todayday}
 You cannot provide the current time.
 You can see usernames from the chat history.
@@ -56,13 +60,14 @@ You can see usernames from the chat history.
 - Web Search;
 - Image Analysis;
 - Audio Transcription and Answering;
+- Text File Analysis;
 - Image Generation.
 
 # Tools
 
 ## Web Browser
-Even though your knowledge cutoff is October 2023, you still can access more updated information using your web search feature, which uses DuckDuckGo Search Engine.
-VERY IMPORTANT: You MUST ALWAYS use CITATION when using web search in your responses, in hyperlink format. Ensure you provide a citation for each paragraph that uses information from a web search.
+Even though your knowledge cutoff is October 2023, you still can access more updated information using your web search feature, which uses **DuckDuckGo Search Engine**.
+VERY IMPORTANT: You MUST ALWAYS use CITATION when using Web Search in your responses, in hyperlink format. Ensure you provide a citation for each paragraph that uses information from a web search.
 If you don't know the answer to something, ask the user if they want you to research online about it.
 ### Citation Example
 User: "What is the capital of France?"
@@ -79,25 +84,26 @@ Only analyze images if the user explicitly asks you to do so.
 Always prioritize the most recent user-uploaded image.
 
 ## Image generation capability
-You can generate images using Stable Diffusion 3 Medium. 
+You can generate images using "FLUX.1 [schnell]" model. 
 To generate an image, you MUST END your message with the prompt you enhanced, like this: generate_img:PROMPT. Tip: Add tags such as "realistic, detailed, photorealistic, HD" and others to improve the quality of the generated image. Put as much detail as possible in the prompt. 
 When you are listing the conversation previous messages, NEVER SAY 'generate_img', instead of that say '(img: your-prompy)'.
-### Example of image generation:
-Sure! I will generate your image with the prompt "your-prompt":\ngenerate_img: A realistic photo of a colorful garden and birds flying, cinematic, 4k, HD
+### Example of your image generation:
+\ngenerate_img: A realistic photo of a colorful garden and birds flying, cinematic, 4k, HD
 
 Respond with "I'm sorry but I cannot assist you with that." (or a similar message) if the user's message requests dangerous, harmful, adult content, sensitive topics or sexual activities.
+
+Keep in mind that you are a model still in development, this means you may make mistakes in your answer.
 '''
 
-client = Client("https://devilent2-whisper-v3-zero.hf.space/")
-genimg = Client("ameerazam08/SD-3-Medium-GPU")
+client = Client("hf-audio/whisper-large-v3")
 
 # This is for web search using audio message
 async def user_audio(filename):
     try:
         job = client.submit(
-            f"{filename}",
-            "openai/whisper-large-v3",
-            api_name="/predict"
+            inputs=handle_file(f"{filename}"),
+            task="transcribe",
+            api_name="/predict_1"
         )
         while not job.done():
             await asyncio.sleep(0.1)
@@ -110,37 +116,18 @@ async def user_audio(filename):
         error_message = f'Transcription error: {e}'
         return error_message
 
-# generate images with stable diffusion 3 medium
+# image generation 
 async def generate_img(img_prompt):
-    try:
-        def submit_job():
-            job = genimg.submit(
-                prompt=f"{img_prompt}",
-                negative_prompt="deformed, distorted, disfigured, poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, mutated hands and fingers, disconnected limbs, mutation, mutated, ugly, disgusting, blurry, amputation, NSFW",
-                use_negative_prompt=True,
-                seed=0,
-                width=1536,
-                height=1536,
-                guidance_scale=7,
-                randomize_seed=True,
-                num_inference_steps=30,
-                NUM_IMAGES_PER_PROMPT=1,
-                api_name="/run"
-            )
-            while not job.done:
-                time.sleep(0.5)
-            return job.result()
-
-        result = await asyncio.to_thread(submit_job)
-        result = result[0]['image']
-        print(result)
-        return result
-        
-    except Exception as e:
-        print(e)
-        error = "An error occurred while generating your image. Please try again later."
-        return error
-        
+    headers = {"Authorization": f"Bearer {hf_token}", "x-use-cache": "false"}
+    payload = {"inputs": f"{img_prompt}", "options": {"wait_for_model": True, "use_cache": False}}
+    async with aiohttp.ClientSession() as session:
+        async with session.post(API_URL, headers=headers, json=payload) as response:
+            image_file = await response.read()  # asynchronously get response content
+            image = "output.png"
+            with open(image, "wb") as file:
+                file.write(image_file)
+            return image
+            
 # Restart function
 async def restart_bot(): 
     os.execv(sys.executable, ['python'] + sys.argv)
@@ -200,7 +187,7 @@ def split_msg(string, chunk_size=1500):
     
 # Use a dictionary to maintain chat history per channel
 channel_histories = defaultdict(lambda: deque(maxlen=MAX_CHAT_HISTORY_MESSAGES))
-                        
+                  
 os.system('clear')
 # Define the Discord bot
 intents = discord.Intents.default()
@@ -217,6 +204,8 @@ async def upload_and_save_file(attachment, channel_id):
         filename = f'user_attachment_{channel_id}.ogg'
     elif attachment.content_type.startswith('image'):
         filename = f'user_attachment_{channel_id}.png'
+    elif attachment.content_type.startswith('text'):
+        filename = f'user_attachment_{channel_id}.txt'
     else:
         return None  # Skip unsupported file types
     filepath = os.path.join(save_dir, filename)
@@ -230,7 +219,6 @@ async def upload_and_save_file(attachment, channel_id):
 async def needs_search(message_content, has_attachments, message):
     global search_rn
     client = Groq(api_key=groq_token)
-    message_content[:2048]
     
     if has_attachments:
         attachment = message.attachments[0]
@@ -241,15 +229,15 @@ async def needs_search(message_content, has_attachments, message):
             message_content += " [User message contains an image - DO NOT web search]"
         
     completion = client.chat.completions.create(
-        model='llama3-70b-8192',
+        model='llama-3.1-70b-versatile',
         messages=[
             {
             "role": "system",
             "content": f"""
-You are a helpful AI assistant called Gemini Helper. Your knowledge cutoff date is October 2023. Today's date is {todayday}.
+You are a helpful AI assistant called Gemini Web Helper. Your knowledge cutoff date is October 2023. Today's date is {todayday}.
 Your job is to decide when Gemini needs to do a web search based on chat history below. Chat history is a Discord chat between user and Gemini (Gemini is the language model).
 Please carefully analyze the conversation to determine if a web search is needed in order for you to provide an appropriate response to the lastest user message.
-Also highly recommended searching in the following circumstances:
+Highly recommended searching in the following circumstances:
 - User is asking Gemini about current events or something that requires real-time information (weather, sports scores, etc.).
 - User is asking Gemini the latest information of something, means they want information until  {todayday}.
 - User is asking Gemini about some term you are totally unfamiliar with (it might be new).
@@ -264,6 +252,7 @@ You should NEVER do a web search if the user's message asks for dangerous, insec
 Respond with plain text only. Do not use any markdown formatting. Do not include any text before or after the search query. For normal searches, don't include the "site:".
 Remember that today's date is {todayday}! Always keep this date in mind to provide time-relevant context in your search query.
 Focus on generating the single most relevant search query you can think of to address the user's message. Do not provide multiple queries.
+Default is not web searching when user asks the model to generate images.
 """
             },
             {
@@ -271,11 +260,12 @@ Focus on generating the single most relevant search query you can think of to ad
                 'content': f'''
 <conversation>
 {message_content}
+(last message below)
 </conversation>
 '''
             }
         ],
-        temperature=0.7,
+        temperature=0.3,
         max_tokens=1024,
         top_p=1.0,
         stream=False,
@@ -304,11 +294,37 @@ Focus on generating the single most relevant search query you can think of to ad
     
     return None
 
-# optimized
+# optimized (this shit aint working properly)
+"""
 async def search_duckduckgo(search_query):
     results = DDGS().text(f"{search_query}", max_results=25)
     search_results =  [{'title': res['title'], 'link': res['href']} for res in results]
     return search_results
+"""
+
+async def search_duckduckgo(search_query):
+    # search_query = search_query.replace(" ", "+").strip()
+    url = f'https://html.duckduckgo.com/html/search?q={search_query}'
+    
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:99.0) Gecko/20100101 Firefox/95.0'
+    }
+    
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as response:
+            if response.status != 200:
+                return f'Error: Unable to fetch results (status code {response.status})'
+            
+            text = await response.text()
+            soup = BeautifulSoup(text, 'html.parser')
+            results = soup.find_all('a', class_='result__a')
+            search_results = []
+            for result in results:
+                title = result.get_text()
+                link = result['href']
+                search_results.append({'title': title, 'link': link})
+
+            return search_results
 
 async def fetch_snippet(url, max_length=SEARCH_SNIPPET_SIZE):
     try:
@@ -419,17 +435,34 @@ async def on_message(message):
             await asyncio.sleep(5)
             await unauthorized.delete()
 
+    if message.content.startswith('!txtdel'):
+        if message.author.id in allowed_ids:
+            try:
+                file_path = f"attachments/user_attachment_{channel_id}.txt"
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    await message.reply(f"`{message.author.name}, text deleted` :white_check_mark:")
+                await restart_bot()
+            except Exception as e:
+                print(f"`Error deleting text: {e}`")
+                await message.reply(f":x: An error occurred: `{e}`")
+        else:
+            unauthorized = await message.reply(":x: You don't have permissions to run this command.")
+            await asyncio.sleep(5)
+            await unauthorized.delete()
+            
     if message.content.startswith('!h'):
         try:
             helpcmd = f"""
             ```
 My commands:
-- !k: Kills the bot process.
-- !r: Restarts the bot.
-- !imgdel: Deletes the current channel image from /attachments folder.
-- !audiodel: Deletes the current channel audio from /attachments folder.
+- !k: Kills the bot process. (DEV ONLY)
+- !r: Restarts the bot. (DEV ONLY)
+- !imgdel: Deletes the current channel image from /attachments folder. (DEV ONLY)
+- !audiodel: Deletes the current channel audio from /attachments folder. (DEV ONLY)
+- !txtdel: Deletes the current channel text from /attachments folder. (DEV ONLY)
             
-Experimental bot - Requested by {message.author.name} at {todayhour}. V3.2 beta 3.5
+Experimental bot - Requested by {message.author.name} at {todayhour}. V3.2.12
             ```
             """
             msg = await message.reply(helpcmd)
@@ -444,7 +477,7 @@ Experimental bot - Requested by {message.author.name} at {todayhour}. V3.2 beta 
             
     channel_history_a = [msg async for msg in message.channel.history(limit=15)]
 
-    files_to_delete = [f"attachments/user_attachment_{channel_id}.ogg", f"attachments/user_attachment_{channel_id}.png"]
+    files_to_delete = [f"attachments/user_attachment_{channel_id}.ogg", f"attachments/user_attachment_{channel_id}.png", f"attachments/user_attachment_{channel_id}.txt"]
     
     is_deleted = False
     for message in channel_history_a:
@@ -452,7 +485,7 @@ Experimental bot - Requested by {message.author.name} at {todayhour}. V3.2 beta 
             # print("message attachment detected")
             attachment = message.attachments[0]
             file_extension = os.path.splitext(attachment.filename)[1].lower()
-            if file_extension in ['.png', '.jpg', '.jpeg', '.gif', '.mp3', '.wav', '.ogg']:
+            if file_extension in ['.png', '.jpg', '.jpeg', '.gif', '.mp3', '.wav', '.ogg', '.txt', '.py', '.json', '.jsonl', '.js', '.c', '.html', '.csv']:
                 attachment_task = asyncio.create_task(upload_and_save_file(attachment, channel_id))
         else:
             try:
@@ -493,16 +526,18 @@ async def handle_message(message):
         user_message = message.content
         user_message = user_message.replace(f'<@{bot.user.id}>', '').strip()
         
-        if has_attachments:
+        if message.attachments:
             attachment = message.attachments[0]
             file_extension = os.path.splitext(attachment.filename)[1].lower()
-            if file_extension in ['.png', '.jpg', '.jpeg', '.gif', '.mp3', '.wav', '.ogg']:
+            if file_extension in ['.png', '.jpg', '.jpeg', '.gif', '.mp3', '.wav', '.ogg', '.txt', '.py', '.json', '.jsonl', '.js', '.c', '.html', '.csv']:
                 attachment_task = asyncio.create_task(upload_and_save_file(attachment, channel_id)) 
 
             if file_extension in ['.png', '.jpg', '.jpeg', '.gif']:
-                user_message += " [Current user message contains an image]"
+                user_message += " [This current user message contains an image, default is you to briefly describe the image.]"
+            elif file_extension in ['.txt', '.py', '.json', '.jsonl', '.js', '.c', '.html', '.csv']:
+                user_message += " [This current user message contains a text file, default is you to briefly describe the text.]"
             else:
-                user_message += " [Current user message contains an audio]"
+                user_message += " [This current user message contains an audio, default is you to briefly answer the audio message.]"
             
         # Convert chat history to the desired format, Moved here
         formatted_history = []
@@ -516,39 +551,41 @@ async def handle_message(message):
             var2 = var2.replace("\n", "").strip()
             num_results = var1.split("'")[1].split("RESULTS:")[1]
             
-            await bot_message.edit(content=f'`Searching "{var2}"` <a:searchingweb:1246248294322147489>')
+            await bot_message.edit(content=f'-# Searching "{var2}" <a:searchingweb:1246248294322147489>')
             await asyncio.sleep(3)
-            await bot_message.edit(content=f'`Searching.` <a:searchingweb:1246248294322147489>')
+            await bot_message.edit(content=f'-# Searching. <a:searchingweb:1246248294322147489>')
             await asyncio.sleep(0.3)
-            await bot_message.edit(content='`Searching..` <a:searchingweb:1246248294322147489>')
+            await bot_message.edit(content='-# Searching.. <a:searchingweb:1246248294322147489>')
             results = await search(search_query)
-            await bot_message.edit(content='`Searching...` <a:searchingweb:1246248294322147489>')
+            
+            await bot_message.edit(content='-# Searching... <a:searchingweb:1246248294322147489>')
             await asyncio.sleep(0.3)
-            await bot_message.edit(content='`Searching...` <:checkmark0:1246546819710849144>')
+            await bot_message.edit(content='-# Searching... <:checkmark0:1246546819710849144>')
             await asyncio.sleep(0.3)
-            await bot_message.edit(content=f'`Reading {num_results} results...` <a:searchingweb:1246248294322147489>')
+            await bot_message.edit(content=f'-# Reading {num_results} results... <a:searchingweb:1246248294322147489>')
             
             web_search += [{
                 'role': 'model',
                 'parts': [
-                    f'Web search results:\n{results}',
+                    f'This below is the web search results:\n{results}',
                 ],
             }]
             
         #### Response Generation ######
         genai.configure(api_key=ai_key)
-
+        
         generation_config = {
-            'temperature': 0.7,
+            'temperature': 0.3,
             'top_p': 1.0,
-            'top_k': 0,
+            'top_k': 1,
             'max_output_tokens': 8192,
             'response_mime_type': 'text/plain',
         }
         
         model = genai.GenerativeModel(
-            model_name='gemini-1.5-flash-latest',
+            model_name='gemini-1.5-flash-002',
             generation_config=generation_config,
+            #tools='code_execution',
             system_instruction=system_prompt,
             safety_settings={
                 HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
@@ -574,15 +611,25 @@ async def handle_message(message):
         attachment_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'attachments')
         file_path1 = os.path.join(attachment_folder, f'user_attachment_{channel_id}.png')
         file_path2 = os.path.join(attachment_folder, f'user_attachment_{channel_id}.ogg')
-
+        file_path3 = os.path.join(attachment_folder, f'user_attachment_{channel_id}.txt')
+        
         files = None
         files2 = None
-    
+        files3 = None
+        
         inst_msg1 = "[Instructions: This is the last image. You should ignore this message and only use this as context. Respond to the user's message before this one. There is no audio in chat history yet.]"
     
         inst_msg2 = "[Instructions: This is the last audio. You should ignore this message and only use this as context. Respond to the user's message before this one. There is no image in chat history yet.]"
     
         inst_msg3 = "[Instructions: This is the last image and audio. You should ignore this message and only use this as context. Respond to the user's message before this one.]"
+        
+        inst_msg4 = "[Instructions: This is the last text file. You should ignore this message and only use this as context. Respond to the user's message before this one.]"
+        
+        inst_msg5 = "[Instructions: This is the last text and image file. You should ignore this message and only use this as context. Respond to the user's message before this one.]"
+        
+        inst_msg6 = "[Instructions: This is the last text and audio file. You should ignore this message and only use this as context. Respond to the user's message before this one.]"
+              
+        inst_msg7 = "[Instructions: This is the last text, audio and image file. You should ignore this message and only use this as context. Respond to the user's message before this one.]"
         
         if os.path.exists(file_path1):
             mime_type1 = 'image/png'
@@ -591,7 +638,11 @@ async def handle_message(message):
         if os.path.exists(file_path2):
             mime_type2 = 'audio/ogg'
             files2 = await upload_to_gemini(file_path2, mime_type=mime_type2)
-        
+            
+        if os.path.exists(file_path3):
+            mime_type3 = 'text/plain'
+            files3 = await upload_to_gemini(file_path3, mime_type=mime_type3)
+            
         for m in channel_history:
             formatted_history.append({
                 'role': 'user' if m.author.name != bot.user.name else 'model',
@@ -605,7 +656,7 @@ async def handle_message(message):
         attachment_history = [msg async for msg in message.channel.history(limit=15)]
         for a in attachment_history:
             if a.attachments and not formatted_history_updated:
-                if files and not files2:
+                if files and not files2 and not files3:
                     formatted_history += [{
                         'role': 'user',
                         'parts': [
@@ -613,7 +664,7 @@ async def handle_message(message):
                             f'{inst_msg1}',
                         ],
                     }]
-                elif files2 and not files:
+                elif files2 and not files and not files3:
                     formatted_history += [{
                         'role': 'user',
                         'parts': [
@@ -621,7 +672,7 @@ async def handle_message(message):
                             f'{inst_msg2}',
                         ],
                     }]
-                elif files and files2:
+                elif files and files2 and not files3:
                     formatted_history += [{
                         'role': 'user',
                         'parts': [
@@ -630,6 +681,46 @@ async def handle_message(message):
                             f'{inst_msg3}',
                         ],
                     }]
+                elif files3 and not files2 and not files:
+                    formatted_history += [{
+                        'role': 'user',
+                        'parts': [
+                            files3,
+                            f'{inst_msg4}',
+                        ],
+                    }]
+                    
+                elif files3 and not files and files2:
+                    formatted_history += [{
+                        'role': 'user',
+                        'parts': [
+                            files3,
+                            files2,
+                            f'{inst_msg6}',
+                        ],
+                    }]
+                    
+                elif files3 and files and not files2:
+                    formatted_history += [{
+                        'role': 'user',
+                        'parts': [
+                            files3,
+                            files,
+                            f'{inst_msg5}',
+                        ],
+                    }]
+                    
+                elif files3 and files and files2:
+                    formatted_history += [{
+                        'role': 'user',
+                        'parts': [
+                            files3,
+                            files2,
+                            files,
+                            f'{inst_msg7}',
+                        ],
+                    }]
+                    
                 else:
                     formatted_history += [{
                         'role': 'user',
@@ -686,10 +777,16 @@ async def handle_message(message):
 
         # If "generate_img:" was detected, call the generate_img function and send the image
         if generate_img_detected:
+            await bot_message.edit(content="-# Generating Image... <a:searchingweb:1246248294322147489> ")
             generated_image_path = await generate_img(img_prompt)
+            await bot_message.edit(content="-# Done <:checkmark:1220809843414270102>")
+            await asyncio.sleep(0.6)
+            
             await message.reply(file=discord.File(generated_image_path))
             await asyncio.sleep(0.5)
+            
             os.remove(generated_image_path)
+            await bot_message.delete()
             
         # Finalize all chunks by removing the animation
         for i, msg in enumerate(message_chunks):
