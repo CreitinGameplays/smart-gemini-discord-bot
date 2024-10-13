@@ -14,7 +14,8 @@ This is a Discord bot built using the [py-cord](https://github.com/Pycord-Develo
 - Your bot token (Get it on Discord Developers Portal)
 - Groq API key (it's free)
 - Google AI Studio API key (it's also free)
-- A functional human brain
+- HuggingFace token (free)
+- A functional human brain (expensive)
 
 Note: Files with `dalle` in the name uses DALL•E 3 for generating images, means you'll need an OpenAI API Key + waste some money with DALL•E 3. The rest uses Stable Diffusion 3, which is free.
 
@@ -36,6 +37,7 @@ Note: Files with `dalle` in the name uses DALL•E 3 for generating images, mean
     TOKEN=your_discord_bot_token
     GEMINI_KEY=your_gemini_api_key
     GROQ_KEY=your_groq_api_key
+    HF_TOKEN=your_hf_token
     ```
 
 ## Usage
@@ -53,6 +55,7 @@ chmod +x start.sh
 - `!r` - Restarts the bot.
 - `!imgdel` - Deletes the current channel image from the `attachments` folder.
 - `!audiodel` - Deletes the current channel audio from the `attachments` folder.
+- `!txtdel` - Deletes the current channel text from the `attachments` folder.
 - `!h` - Displays the help command with available bot commands.
 
 ## License
