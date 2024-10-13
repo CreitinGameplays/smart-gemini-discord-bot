@@ -1,15 +1,15 @@
-~~(TODO: UPDATE README FILE)~~
 # Smart Gemini Discord Bot
 
 This is a Discord bot built using the [py-cord](https://github.com/Pycord-Development/pycord)
 
 ## It can
 
-- Web Search (Using Llama 3 70b from Groq)
+- Web Search (Using Llama 3.1 70b from Groq)
 - Image Analysis
 - Audio Transcription
 - Generate images
-
+- Read text files
+  
 ## Requirements
 - Your bot token (Get it on Discord Developers Portal)
 - Groq API key (it's free)
