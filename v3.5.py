@@ -269,7 +269,7 @@ Just respond with 'YES' or 'NO' if you think the following user chat history req
 If you believe a search will be necessary, skip a line and generate a search query that you would enter into the DuckDuckGo search engine to find the most relevant information to help you respond.
 Use conversation history to get context for web searches. Your priority is the last user message.
 Remember that every web search you perform is stateless, meaning you will need to search again if necessary.
-The search query MUST BE all lowercase. The search query must also be in accordance with the language of the conversation (e.g Portuguese, English, Spanish etc.)
+The search query must also be in accordance with the language of the conversation (e.g Portuguese, English, Spanish etc.)
 Keep it simple and short. Always output your search like this: SEARCH:example-search-query. Always put the `SEARCH`. Do not put any slashes in the search query. To choose a specific number of search results this will return, skip another line and put it like this: RESULTS:number, example: RESULTS:5. Always put the `RESULTS`, only works like that. Minimum of 5 and maximum of 25 search results, the minimum recommended is 15 search results. THIS IS REQUIRED. First is SEARCH, second is RESULTS.
 You should NEVER do a web search if the user's message asks for dangerous, insecure, harmful, +18 (adult content), sexual content and malicious code. Just ignore these types of requests.
 Respond with plain text only. Do not use any markdown formatting. Do not include any text before or after the search query. For normal searches, don't include the "site:".
@@ -283,7 +283,7 @@ Default is not web searching when user asks the model to generate images.
                 'content': f'''
 <conversation>
 {message_content}
-(last message below)
+(last message)
 </conversation>
 '''
             }
@@ -311,6 +311,7 @@ Default is not web searching when user asks the model to generate images.
         search_num = output.find('RESULTS:')
         if search_num != -1:
             search_rn = output[search_num + len('RESULTS:'):].strip()
+            int(search_rn)
             print(f"Extracted number of results: {search_rn}")
             
             return search_query, search_rn
@@ -320,7 +321,7 @@ Default is not web searching when user asks the model to generate images.
 # Web search optimization
 async def search_duckduckgo(search_query, session):
     search_query = search_query[0]
-    search_query = search_query.replace(" ", "+").strip()
+    search_query = search_query.replace("\n", "").strip()
     url = f'https://html.duckduckgo.com/html/search?q={search_query}'
     
     headers = {
@@ -524,7 +525,7 @@ Experimental bot - Requested by {message.author.name} at {todayhour}. V3.5.05
                         is_deleted = True
             except Exception as e:
                 error = e
-                print(error)
+                #print(error)
         
 # main
 async def handle_message(message):
