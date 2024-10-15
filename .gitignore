@@ -2,3 +2,6 @@
 chat_history.json
 lm.py
 attachments/*
+bot_errors.log
+bot_errors.log.1
+bot_errors.log.2
