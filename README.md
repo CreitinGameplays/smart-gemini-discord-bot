@@ -4,7 +4,7 @@ This is a Discord bot built using the [py-cord](https://github.com/Pycord-Develo
 
 ## It can
 
-- Web Search (Using Llama 3.1 70b from Groq)
+- Web Search (Using Meta Llama from Groq)
 - Image Analysis
 - Audio Transcription
 - Generate images
