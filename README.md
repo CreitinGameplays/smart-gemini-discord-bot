@@ -9,6 +9,7 @@ This is a Discord bot built using the [py-cord](https://github.com/Pycord-Develo
 - Audio Transcription
 - Generate images
 - Read text files
+- Execute Python code snippet (`v3.5.py` and above)
   
 ## Requirements
 - Your bot token (Get it on Discord Developers Portal)
