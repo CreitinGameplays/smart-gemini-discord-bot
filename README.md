@@ -18,7 +18,7 @@ This is a Discord bot built using the [py-cord](https://github.com/Pycord-Develo
 - A functional human brain (expensive)
 
 Note: Files with `dalle` in the name uses DALL•E 3 for generating images, means you'll need an OpenAI API Key + waste some money with DALL•E 3. The rest uses free image generation model.
-
+`3.5.py` and above doesn't require the Groq API key
 ## Installation
 
 1. Clone the repository:
