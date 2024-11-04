@@ -4,11 +4,12 @@ This is a Discord bot built using the [py-cord](https://github.com/Pycord-Develo
 
 ## It can
 
-- Web Search (Using Meta Llama from Groq)
+- Web Search
 - Image Analysis
 - Audio Transcription
 - Generate images
 - Read text files
+- Execute Python code snippet (`v3.5.py` and above)
   
 ## Requirements
 - Your bot token (Get it on Discord Developers Portal)
@@ -17,7 +18,12 @@ This is a Discord bot built using the [py-cord](https://github.com/Pycord-Develo
 - HuggingFace token (free)
 - A functional human brain (expensive)
 
+`v3.5` and above:
+- Brave Search API key (free but requires cc)
+
 Note: Files with `dalle` in the name uses DALL•E 3 for generating images, means you'll need an OpenAI API Key + waste some money with DALL•E 3. The rest uses free image generation model.
+
+`v3.5.py` and above do not require Groq API Key.
 
 ## Installation
 
@@ -38,6 +44,7 @@ Note: Files with `dalle` in the name uses DALL•E 3 for generating images, mean
     GEMINI_KEY=your_gemini_api_key
     GROQ_KEY=your_groq_api_key
     HF_TOKEN=your_hf_token
+    BRAVE_TOKEN=your_brave_token
     ```
 
 ## Usage
