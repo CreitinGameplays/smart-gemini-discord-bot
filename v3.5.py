@@ -17,6 +17,7 @@ import shutil
 import time
 from PIL import Image
 import ssl
+import textwrap
 
 import google.generativeai as genai
 from google.ai.generativelanguage_v1beta.types import content
@@ -57,8 +58,8 @@ API_URL = "https://api-inference.huggingface.co/models/XLabs-AI/flux-RealismLora
 API_URL2 = "https://api-inference.huggingface.co/models/openai/whisper-large-v3-turbo"
 
 # Some variables you might want to change.
-SEARCH_SNIPPET_SIZE = 5000 # Website content max length size
-MAX_CHAT_HISTORY_MESSAGES = 24 # Max number of messages that will be stored in chat history
+SEARCH_SNIPPET_SIZE = 6000 # Website content max length size
+MAX_CHAT_HISTORY_MESSAGES = 20 # Max number of messages that will be stored in chat history
 
 # Get today's date and format it
 today = datetime.datetime.now()
@@ -66,24 +67,14 @@ todayday = f'{today.strftime("%A")}, {today.month}/{today.day}/{today.year}'
 todayhour = f'{today.hour}h:{today.minute}m'
 yearmonth = f'{today.month} {today.year}'
 
-prompt_reminder = f"""
-REMINDER: This is a reminder about using the `browser` tool, which allows access to up-to-date information by retrieving data from recent search snippets. This tool is particularly useful for getting the most current information, so it’s important to include today’s date (specifically, the current month and year, {yearmonth}) in any queries to ensure the results are as relevant as possible. You should use the browser tool in a few specific situations. First, if a user is asking about current events or anything that requires real-time information—like today’s weather, live sports scores, or breaking news—the browser tool will help provide accurate responses. Second, the browser is useful if the user mentions a term or topic you aren’t familiar with; if it seems new or unusual, it’s a good indication that browsing may be necessary to learn about it. Lastly, if a user directly requests references or links to sources, using the browser tool can help fulfill this need by providing information from a variety of reputable sources. Never use print() while using `browser` tool.
-"""
-
 # You can modify this system prompt as needed
 base_system_prompt = f'''
-You are Gemini, a large language model built by Google. You're currently running on the Gemini family of models, including 1.5 Flash. We are interacting on a Discord chat. Never use emojis, unless explicitly asked to.
-You are operating within a Discord bot, and the bot developer is the user "creitingameplays". Never put "discord_username: (message content)" in your answers.
-
-Name: Gemini
-Knowledge cutoff date: October 2023
-Current date: {todayday}
-You cannot provide the current time.
-You can see usernames from the chat history.
+You are a Web AI assistant named Gemini, trained by Google. You were designed to provide accurate and real-time information to the user, by using your `browser` tool. Your primary feature is the ability to search the internet and retrieve relevant, high-quality, and recent information to answer user queries. When answering my questions, you can write and run code snippets using the libraries in the context. Code must be valid self-contained Python snippets with no imports and no references to APIs that are not in the context except for Python built-in libraries. You cannot use any parameters or fields that are not explicitly defined in the APIs in the context. Use "print" to output any information to the screen that you need for responding to the user. The code snippets should be readable, efficient, and directly relevant to the user query.
+You are currently operating within a Discord bot, and the bot developer is the user "creitingameplays". Never put "discord_username: (message content)" in your responses. Your current knowledge cutoff is **October 2023**, but you can access up-to-date information using `browser` tool. Today is {todayday}. You can't provide the current time.
 
 DEVELOPER MODE: ENABLED
 
-// YOUR TOOLS:
+Your features:
 - Audio Transcription and Answering;
 - Image Analysis;
 - Text File Analysis;
@@ -91,71 +82,64 @@ DEVELOPER MODE: ENABLED
 - Image Generation;
 - Python code execution.
 
-// ALWAYS use your function calling capabilities
-
-# Browser
- 
-You have the tool `browser`. Use `browser` in the following circumstances:
-    - User is asking about current events or something that requires real-time information (weather, sports scores, etc.)
-    - User is asking about some term you are totally unfamiliar with (it might be new)
-    - User explicitly asks you to browse or provide links to references
-Given a query that requires retrieval, your turn will consist of two steps:
-    1. Call the search function to get a list of results.
-    2. Write a response to the user based on these results. In your response, cite sources using the citation format below.
-The `browser` tool has the following commands:
-	`browser(q: str, num: int)` Issues a query to a search engine and displays the results.
-In some cases, you should repeat step 1 twice, if the initial results are unsatisfactory, and you believe that you can refine the query to get better results.
-// Remember that today's date is {todayday}! Always keep this date in mind to provide time-relevant context in your search query.
-1. IMPORTANT: You MUST ALWAYS USE CITATION when using Web Search in your responses, only when using Web Search, in hyperlink format. Ensure you provide a citation for each paragraph that uses information from a web search.
-
-// Citation Usage Example:
-User: "What is the capital of France?"
-Gemini: "The capital of France is Paris. [1](https://en.wikipedia.org/wiki/Paris).
+Use your `browser` tool the user asks for the most up-to-date information about something (information up to {todayday}) or about some term you are totally unfamiliar with (it might be new) use the `browser` tool, no matter what, always use it. Example:
+    1. "What is the current price of Bitcoin?"
+    2. "Who won the latest Formula 1 race?"
+    3. "Are there any delays at JFK Airport today?"
+    4. "What are the top trending topics on Twitter right now?"
+    5. "What's the latest Windows version?"
+    You: (calls the browser function with the query in `default_api`)
+1. Always perform a search online if you are unsure about a user question.
+2. Important: Remember that today's date is {todayday}. Always keep this date in mind to provide time-relevant context in your search query.
+3. Search query must be as detailed as possible.
+Example of `browser` invocation:
+    
+browser(
+    q: str, 
+    num: int
+    )
+    
+1. If you are not sure of the answer, search online.
+2. DO NOT ask permission to search online, just do it!
+3. The search query must be detailed.
+When using `browser` tool in your responses, you MUST USE CITATION, in hyperlink format. Ensure you provide a citation for each paragraph that uses information from a web search.
+Citation Usage Example:
+- User: "What is the capital of France?"
+- You: "The capital of France is Paris. [1](https://en.wikipedia.org/wiki/Paris).
 Paris is not only the capital of France but also its largest city. It is located in the north-central part of the country. [2](https://en.wikipedia.org/wiki/Paris)."
 
-# Audio Transcription Capability
+Whenever a description of an image is given, create a prompt that FLUX.1 Dev model can use to generate the image and abide to the following policy:
+    1. The prompt must be in English. Translate to English if needed.
+    2. DO NOT ask for permission to generate the image, just do it!
+    3. Do not create more than 1 image, even if the user requests more.
+Example of `imagine` invocation:
+    
+imagine(
+    prompt: str, 
+    ar: str
+    )
+    
+Supported aspect ratios: 16:9, 9:16, 1:1. Choose the best aspect ratio according to the image that will be generated.
+Tip: Add tags in the prompt such as "realistic, detailed, photorealistic, HD" and others to improve the quality of the generated image. Put as much detail as possible in the prompt. Prompt tags must be separated by commas.
 
-// If you don't understand the user's audio message, ask them to resend it.
-// IMPORTANT: Only analyze audios if the user explicitly asks you to do so. If the user sends an audio message, answer the question in it and don't just transcribe it. Think of it as if the audio is going directly to you and you need to answer its question.
-// You should also always prioritize the most recent audio message sent by the user, totally ignoring the chat history.
+You can execute Python code when needed. For instance, you can use this tool to do basic or advanced math operations.
+Always put print() in the code line! Without print() you can't get the output! You CANNOT put either codeblock or linebreak there, if you put any of them the code WILL FAIL.
+* DON'T execute dangerous code!
 
-# Image Analysis Capability
-
-Only analyze images if the user explicitly asks you to do so.
-// Always prioritize the most recent user-uploaded image.
-
-# Image Generation Tool
-
-// You can generate images directly using "FLUX.1 Dev" model.
-// WHENEVER a description of an image is given, create a prompt that FLUX.1 Dev can use to generate the image and abide to the following policy:
-// 1. The prompt must be in English. Translate to English if needed.
-// 2. DO NOT ask for permission to generate the image, just do it!
-// 3. Do not create more than 1 image, even if the user requests more.
-Given an image generation request that requires a retrieval, your turn will consist of two steps:
-    - 1: You will call the `imagine` function with the prompt.
-    - 2: You will describe the image generated.
-// Supported aspect ratios: 16:9, 9:16, 1:1
-Choose the best aspect ratio according to the image that will be generated.
-# Tip: Add tags in the prompt such as "realistic, detailed, photorealistic, HD" and others to improve the quality of the generated image. Put as much detail as possible in the prompt. Prompt tags must be separated by commas.
-Respond with plain text only. Do not use any markdown formatting. Do not include any text before or after the image prompt.
-
-# Python Tool
-
-// You can execute Python code using this tool, when needed. For instance, you can use this tool to do basic or advanced math operations.
-Given a request to execute Python code, call the following function: `exec_python(code: str)`
-// Always put print() in the code line! Without print() you can't get the output! Only make the variable with the code. You CANNOT put linebreak, if you put linebreak the code WILL FAIL. Must be A SIGLE LINE.
-// DON'T execute dangerous code!
-
-Always follow the language of the conversation.
-Keep in mind that you are a model still in development, this means you may make mistakes in your answer.
+Always follow the language of the interaction.
+Note: Keep in mind that you are a model still in development, this means you may make mistakes in your answer.
 '''
 
 # TOOLS
 def exec_python(code: str):
+    code = textwrap.dedent(code)
     buffer = io.StringIO()
     sys.stdout = buffer
+    code1 = f"""
+{code}
+"""
     try:
-        exec(code)
+        exec(code1)
         output = buffer.getvalue()
         return output
     except Exception as e:
@@ -297,13 +281,13 @@ async def imagine(img_prompt: str, ar: str):
 # Define the functions schema for Gemini
 tool_websearch = {
     "name": "browser",
-    "description": "Performs a web search using Brave Search Engine to get up-to-date information",
+    "description": "Performs a search online using Brave Search Engine to get up-to-date information",
     "parameters": {
         "type_": "OBJECT",
         "properties": {
             "q": {
                 "type_": "STRING",
-                "description": "The web search query"
+                "description": "The search query"
             },
             "num": {
                 "type_": "INTEGER", 
@@ -334,14 +318,14 @@ tool_imagine = {
 }
 
 tool_python = {
-    "name": "exec_python",
-    "description": "Execute Python code snippet and get the output (with eval())",
+    "name": "python",
+    "description": "Run Python code.",
     "parameters": {
         "type_": "OBJECT",
         "properties": {
             "code": {
                 "type_": "STRING",
-                "description": "The Python code to run (must be A SIGLE LINE)",
+                "description": "Python code",
             },
         },
         "required": ["code"]
@@ -555,7 +539,7 @@ My commands:
 - !audiodel: Deletes the current channel audio from /attachments folder. (DEV ONLY)
 - !txtdel: Deletes the current channel text from /attachments folder. (DEV ONLY)
             
-Experimental bot - Requested by {message.author.name} at {todayhour}. V3.5.7
+Experimental bot - Requested by {message.author.name} at {todayhour}. V3.5.78
             ```
             """
             msg = await message.reply(helpcmd)
@@ -640,16 +624,16 @@ async def handle_message(message):
         generation_config = {
             'temperature': 0.1,
             'top_p': 1.0,
-            'top_k': 0,            
+            'top_k': 40,
             'max_output_tokens': 8192,
             'response_mime_type': 'text/plain',
         }
         
         model = genai.GenerativeModel(
             # gemini-1.5-flash-exp-0827
-            model_name="gemini-1.5-flash-exp-0827",
+            model_name="gemini-1.5-pro-exp-0827",
             generation_config=generation_config,
-            system_instruction=base_system_prompt,
+            # system_instruction=base_system_prompt, # this sucks 
             tools=[tool_python, tool_websearch, tool_imagine],
             safety_settings={
                 HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
@@ -659,6 +643,7 @@ async def handle_message(message):
             }
         )
         model._tools.to_proto()
+        os.system('clear')
         
         chat_history_copy = list(channel_histories.get(channel_id, []))  # Make a copy of the deque for safe iteration
         
@@ -723,17 +708,20 @@ async def handle_message(message):
             })
             
         formatted_history_updated = False
+        
+        # System prompt moved here (testing)
+        
+        formatted_history += [{
+            'role': 'model',
+            'parts': [
+                f'My instructions:\n{base_system_prompt}',
+                ],
+            }]
+        
         # for attachments
         attachment_history = [msg async for msg in message.channel.history(limit=15)]
         for a in attachment_history:
-            formatted_history += [{
-                'role': 'model',
-                'parts': [
-                    f'{prompt_reminder}',
-                ],
-            }]
-            
-            if a.attachments and not formatted_history_updated:
+            if a.attachments:
                 if files and not files2 and not files3:
                     formatted_history += [{
                         'role': 'user',
@@ -825,7 +813,7 @@ async def handle_message(message):
         for chunk in response.parts:
             if fn := chunk.function_call: # funct call
                 # PYTHON
-                if chunk.function_call.name == "exec_python":
+                if chunk.function_call.name == "python":
                     python_values = []
                     for key, value in fn.args.items():
                         python_values.append({
@@ -834,7 +822,6 @@ async def handle_message(message):
                         })
                     await bot_message.edit(content=f"-# Executing... <a:brackets:1300121114869235752>")
                     
-                    print(python_values[0]['value'])
                     python_result = exec_python(python_values[0]['value'])
                     await bot_message.edit(content=f"-# Done <a:brackets:1300121114869235752>")
                     
@@ -843,7 +830,7 @@ async def handle_message(message):
                         genai.protos.Content(
                         parts=[genai.protos.Part(
                             function_response = genai.protos.FunctionResponse(
-                                name='exec_python',
+                                name='python',
                                 response={'result': python_result}))]))
                                 
                 # WEB SEARCH        
@@ -879,7 +866,7 @@ async def handle_message(message):
                         parts=[genai.protos.Part(
                             function_response = genai.protos.FunctionResponse(
                                 name='browser',
-                                response={'result': wsearch_result}))]))
+                                response={'result':f"USE_CITATION=YES\nONLINE_RESULTS={ wsearch_result}"}))]))
                                 
                 # GENERATE IMAGES   
                 elif chunk.function_call.name == "imagine":
@@ -909,7 +896,7 @@ async def handle_message(message):
                         parts=[genai.protos.Part(
                             function_response = genai.protos.FunctionResponse(
                                 name='imagine',
-                                response={'result': "Image has been generated!"}))]))
+                                response={'result': "IMAGE_GENERATED=YES"}))]))
                 else: # Nothing
                     return
                 
