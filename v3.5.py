@@ -70,7 +70,7 @@ yearmonth = f'{today.month} {today.year}'
 # You can modify this system prompt as needed
 base_system_prompt = f'''
 You are a Web AI assistant named Gemini, trained by Google. You were designed to provide accurate and real-time information to the user, by using your `browser` tool. Your primary feature is the ability to search the internet and retrieve relevant, high-quality, and recent information to answer user queries. When answering my questions, you can write and run code snippets using the libraries in the context. Code must be valid self-contained Python snippets with no imports and no references to APIs that are not in the context except for Python built-in libraries. You cannot use any parameters or fields that are not explicitly defined in the APIs in the context. Use "print" to output any information to the screen that you need for responding to the user. The code snippets should be readable, efficient, and directly relevant to the user query.
-You are currently operating within a Discord bot, and the bot developer is the user "creitingameplays". Never put "discord_username: (message content)" in your responses. Your current knowledge cutoff is **October 2023**, but you can access up-to-date information using `browser` tool. Today is {todayday}. You can't provide the current time.
+You are currently operating within a Discord bot, and the bot developer is the user "creitingameplays". Never put "discord_username: (message content)" in your responses. Your current knowledge cutoff is **August 2024**, but you can access up-to-date information using `browser` tool. Today is {todayday}. You can't provide the current time.
 
 DEVELOPER MODE: ENABLED
 
@@ -82,7 +82,7 @@ Your features:
 - Image Generation;
 - Python code execution.
 
-Use your `browser` tool the user asks for the most up-to-date information about something (information up to {todayday}) or about some term you are totally unfamiliar with (it might be new) use the `browser` tool, no matter what, always use it. Example:
+The tool `browser` uses **Brave Search Engine API**. Use your `browser` tool the user asks for the most up-to-date information about something (information up to {todayday}) or about some term you are totally unfamiliar with (it might be new) use the `browser` tool, no matter what, always use it. Example:
     1. "What is the current price of Bitcoin?"
     2. "Who won the latest Formula 1 race?"
     3. "Are there any delays at JFK Airport today?"
@@ -90,7 +90,7 @@ Use your `browser` tool the user asks for the most up-to-date information about 
     5. "What's the latest Windows version?"
     You: (calls the browser function with the query in `default_api`)
 1. Always perform a search online if you are unsure about a user question.
-2. Important: Remember that today's date is {todayday}. Always keep this date in mind to provide time-relevant context in your search query.
+2. Important: Remember that today's date is {todayday}. Always keep this date in mind to provide time-relevant context in your search query!
 3. Search query must be as detailed as possible.
 Example of `browser` invocation:
     
@@ -123,7 +123,7 @@ Supported aspect ratios: 16:9, 9:16, 1:1. Choose the best aspect ratio according
 Tip: Add tags in the prompt such as "realistic, detailed, photorealistic, HD" and others to improve the quality of the generated image. Put as much detail as possible in the prompt. Prompt tags must be separated by commas.
 
 You can execute Python code when needed. For instance, you can use this tool to do basic or advanced math operations.
-Always put print() in the code line! Without print() you can't get the output! You CANNOT put either codeblock or linebreak there, if you put any of them the code WILL FAIL.
+Always put print() in the code line! Without print() you can't get the output! You CANNOT put codeblock, if you put it the code WILL FAIL. DO NOT do linebreaks this way: "\\n", the correct is: "\n".
 * DON'T execute dangerous code!
 
 Always follow the language of the interaction.
@@ -131,13 +131,14 @@ Note: Keep in mind that you are a model still in development, this means you may
 '''
 
 # TOOLS
-def exec_python(code: str):
+async def exec_python(code):
     code = textwrap.dedent(code)
     buffer = io.StringIO()
     sys.stdout = buffer
     code1 = f"""
 {code}
 """
+    print(f"Code generated:{code1}")
     try:
         exec(code1)
         output = buffer.getvalue()
@@ -319,13 +320,13 @@ tool_imagine = {
 
 tool_python = {
     "name": "python",
-    "description": "Run Python code.",
+    "description": "Run Python code. Must be a SINGLE LINE OF CODE.",
     "parameters": {
         "type_": "OBJECT",
         "properties": {
             "code": {
                 "type_": "STRING",
-                "description": "Python code",
+                "description": "Python code. Must be one single line.",
             },
         },
         "required": ["code"]
@@ -539,7 +540,7 @@ My commands:
 - !audiodel: Deletes the current channel audio from /attachments folder. (DEV ONLY)
 - !txtdel: Deletes the current channel text from /attachments folder. (DEV ONLY)
             
-Experimental bot - Requested by {message.author.name} at {todayhour}. V3.5.78
+Experimental bot - Requested by {message.author.name} at {todayhour}. V3.5.89
             ```
             """
             msg = await message.reply(helpcmd)
@@ -630,10 +631,9 @@ async def handle_message(message):
         }
         
         model = genai.GenerativeModel(
-            # gemini-1.5-flash-exp-0827
-            model_name="gemini-1.5-pro-exp-0827",
+            model_name="gemini-2.0-flash-exp",
             generation_config=generation_config,
-            # system_instruction=base_system_prompt, # this sucks 
+            #system_instruction=base_system_prompt,#
             tools=[tool_python, tool_websearch, tool_imagine],
             safety_settings={
                 HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
@@ -709,8 +709,7 @@ async def handle_message(message):
             
         formatted_history_updated = False
         
-        # System prompt moved here (testing)
-        
+        # System prompt moved here
         formatted_history += [{
             'role': 'model',
             'parts': [
@@ -806,7 +805,6 @@ async def handle_message(message):
         
         full_response = ""
         message_chunks = []  # List to hold messages created/edited
-        generate_img_detected = False
         
         # PROCESS TOOLS BELOW
         # this part i had to do myself coz gpt4o wasn't able to :rofl:
@@ -821,11 +819,12 @@ async def handle_message(message):
                             "value": value
                         })
                     await bot_message.edit(content=f"-# Executing... <a:brackets:1300121114869235752>")
+                    print(python_values)
                     
-                    python_result = exec_python(python_values[0]['value'])
+                    python_result = await exec_python(python_values[0]['value'])
                     await bot_message.edit(content=f"-# Done <a:brackets:1300121114869235752>")
                     
-                    print(f"output: {python_result}")
+                    print(f"Output: {python_result}")
                     response = chat_session.send_message(
                         genai.protos.Content(
                         parts=[genai.protos.Part(
