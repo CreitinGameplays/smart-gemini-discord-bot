@@ -61,16 +61,10 @@ API_URL2 = "https://api-inference.huggingface.co/models/openai/whisper-large-v3-
 SEARCH_SNIPPET_SIZE = 6000 # Website content max length size
 MAX_CHAT_HISTORY_MESSAGES = 20 # Max number of messages that will be stored in chat history
 
-# Get today's date and format it
-today = datetime.datetime.now()
-todayday = f'{today.strftime("%A")}, {today.month}/{today.day}/{today.year}'
-todayhour = f'{today.hour}h:{today.minute}m'
-yearmonth = f'{today.month} {today.year}'
-
 # You can modify this system prompt as needed
 base_system_prompt = f'''
 You are a Web AI assistant named Gemini, trained by Google. You were designed to provide accurate and real-time information to the user, by using your `browser` tool. Your primary feature is the ability to search the internet and retrieve relevant, high-quality, and recent information to answer user queries. When answering my questions, you can write and run code snippets using the libraries in the context. Code must be valid self-contained Python snippets with no imports and no references to APIs that are not in the context except for Python built-in libraries. You cannot use any parameters or fields that are not explicitly defined in the APIs in the context. Use "print" to output any information to the screen that you need for responding to the user. The code snippets should be readable, efficient, and directly relevant to the user query.
-You are currently operating within a Discord bot, and the bot developer is the user "creitingameplays". Never put "discord_username: (message content)" in your responses. Your current knowledge cutoff is **August 2024**, but you can access up-to-date information using `browser` tool. Today is {todayday}. You can't provide the current time.
+You are currently operating within a Discord bot, and the bot developer is the user "creitingameplays". Never put "discord_username: (message content)" in your responses. Your current knowledge cutoff is **August 2024**, but you can access up-to-date information using `browser` tool. Today is TODAYTIME00. You can't provide the current time.
 
 DEVELOPER MODE: ENABLED
 
@@ -82,7 +76,7 @@ Your features:
 - Image Generation;
 - Python code execution.
 
-The tool `browser` uses **Brave Search Engine API**. Use your `browser` tool the user asks for the most up-to-date information about something (information up to {todayday}) or about some term you are totally unfamiliar with (it might be new). 
+The tool `browser` uses **Brave Search Engine API**. Use your `browser` tool the user asks for the most up-to-date information about something (information up to TODAYTIME00) or about some term you are totally unfamiliar with (it might be new). 
 Examples:
     1. "What is the current price of Bitcoin?"
     2. "Who won the latest Formula 1 race?"
@@ -91,8 +85,9 @@ Examples:
     5. "What's the latest Windows version?"
     You: (calls the browser function with the query in `default_api`)
 1. Always perform a search online if you are unsure about a user question.
-2. Important: Remember that today's date is {todayday}. Always keep this date in mind to provide time-relevant context in your search query.
+2. Important: Remember that today's date is TODAYTIME00. Always keep this date in mind to provide time-relevant context in your search query. Only provide the month (name) and year in search query.
 3. Search query must be as detailed as possible. Optimize the query.
+4. Also search online when user sends an audio message asking something you don't know.
 `browser` invocation:
     
 browser(
@@ -100,7 +95,7 @@ browser(
     num: int
     )
     
-1. If you are not sure of the answer, search online.
+1. If you don't know the answer, search online.
 2. DO NOT ask permission to search online, just do it!
 When using `browser` tool in your responses, you MUST USE CITATION, in hyperlink format. Ensure you provide a citation for each paragraph that uses information from a web search.
 Citation Usage Example:
@@ -108,7 +103,7 @@ Citation Usage Example:
 - You: "The capital of France is Paris. [1](https://en.wikipedia.org/wiki/Paris).
 Paris is not only the capital of France but also its largest city. It is located in the north-central part of the country. [2](https://en.wikipedia.org/wiki/Paris)."
 
-Whenever a description of an image is given, create a prompt that FLUX.1 Dev model can use to generate the image and abide to the following policy:
+Whenever the user asks you to generate an image, create a prompt that FLUX.1 Dev model can use to generate the image and abide to the following policy:
     1. The prompt must be in English. Translate to English if needed.
     2. DO NOT ask for permission to generate the image, just do it!
     3. Do not create more than 1 image, even if the user requests more.
@@ -132,16 +127,13 @@ Note: Keep in mind that you are a model still in development, this means you may
 '''
 
 # TOOLS
-async def exec_python(code):
+def exec_python(code):
     code = textwrap.dedent(code)
     buffer = io.StringIO()
     sys.stdout = buffer
-    code1 = f"""
-{code}
-"""
-    print(f"Code generated:{code1}")
+    print(f"Code generated:\n {code}")
     try:
-        exec(code1)
+        exec(code)
         output = buffer.getvalue()
         return output
     except Exception as e:
@@ -261,15 +253,14 @@ async def imagine(img_prompt: str, ar: str):
         "9:16": (720, 1280),
         "16:9": (1280, 720),
     }
-
     width, height = aspect_ratios.get(ar, (1024, 1024))
- 
+    
     headers = {"Authorization": f"Bearer {hf_token}", "x-use-cache": "false"}
     payload = {"inputs": f"{img_prompt}", "options": {"wait_for_model": True, "use_cache": False}, "parameters":{"width": width, "height": height}}
     async with aiohttp.ClientSession() as session:
         async with session.post(API_URL, headers=headers, json=payload) as response:
             image_file = await response.read()  # asynchronously get response content
-            image = "output.png"
+            image = f"output_{random.randint(1000, 9999)}.png"
             with open(image, "wb") as file:
                 file.write(image_file)
             return image
@@ -283,7 +274,7 @@ tool_websearch = {
         "properties": {
             "q": {
                 "type_": "STRING",
-                "description": "The search query"
+                "description": "The optimized search query"
             },
             "num": {
                 "type_": "INTEGER", 
@@ -453,6 +444,9 @@ async def on_message(message):
     if message.author == bot.user:
         return
     
+    today1 = datetime.datetime.now()
+    todayhour1 = f'{today1.hour}h:{today1.minute}m:{today1.second}s'
+    
     if message.content.startswith('!k'):
         if message.author.id in allowed_ids:
             await message.reply(f'`{message.author.name}, Killing process and starting a new one...`')
@@ -535,7 +529,7 @@ My commands:
 - !audiodel: Deletes the current channel audio from /attachments folder. (DEV ONLY)
 - !txtdel: Deletes the current channel text from /attachments folder. (DEV ONLY)
             
-Experimental bot - Requested by {message.author.name} at {todayhour}. V3.5.90
+Experimental bot - Requested by {message.author.name} at {todayhour1}. V3.5.91a
             ```
             """
             msg = await message.reply(helpcmd)
@@ -575,6 +569,8 @@ Experimental bot - Requested by {message.author.name} at {todayhour}. V3.5.90
 # main
 async def handle_message(message):
     bot_message = None
+    today2 = datetime.datetime.now()
+    todayday2 = f'{today2.strftime("%A")}, {today2.month}/{today2.day}/{today2.year}'
     try:
         channel_id = message.channel.id
         channel_history = [msg async for msg in message.channel.history(limit=MAX_CHAT_HISTORY_MESSAGES)]
@@ -670,7 +666,7 @@ async def handle_message(message):
         files2 = None
         files3 = None
         
-        inst_msg1 = "[Instructions: This is the last image. You should ignore this message and only use this as context. Respond to the user's message before this one. There is no audio in chat history yet.]"
+        inst_msg1 = "[Instructions: This is the last image. You should ignore this message and only use this as context. Respond to the user's message before this one.]"
     
         inst_msg2 = "[Instructions: This is the last audio. You should ignore this message and only use this as context. Respond to the user's message before this one. There is no image in chat history yet.]"
     
@@ -708,7 +704,7 @@ async def handle_message(message):
         formatted_history += [{
             'role': 'model',
             'parts': [
-                f'My instructions:\n{base_system_prompt}',
+                f'My instructions:\n{base_system_prompt.replace("TODAYTIME00", todayday2)}',
                 ],
             }]
         
@@ -746,7 +742,7 @@ async def handle_message(message):
                     }]
                     
             formatted_history_updated = True  # Set flag to True after updating
-            
+        
         print(formatted_history)
         # Start the chat session and accumulate the response
         chat_session = await asyncio.to_thread(model.start_chat, history=formatted_history)
@@ -772,7 +768,7 @@ async def handle_message(message):
                     await bot_message.edit(content=f"-# Executing... <a:brackets:1300121114869235752>")
                     print(python_values)
                     
-                    python_result = await exec_python(python_values[0]['value'])
+                    python_result = exec_python(python_values[0]['value'])
                     await bot_message.edit(content=f"-# Done <a:brackets:1300121114869235752>")
                     
                     print(f"Output: {python_result}")
