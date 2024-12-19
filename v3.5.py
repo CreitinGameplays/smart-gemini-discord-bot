@@ -82,7 +82,8 @@ Your features:
 - Image Generation;
 - Python code execution.
 
-The tool `browser` uses **Brave Search Engine API**. Use your `browser` tool the user asks for the most up-to-date information about something (information up to {todayday}) or about some term you are totally unfamiliar with (it might be new) use the `browser` tool, no matter what, always use it. Example:
+The tool `browser` uses **Brave Search Engine API**. Use your `browser` tool the user asks for the most up-to-date information about something (information up to {todayday}) or about some term you are totally unfamiliar with (it might be new). 
+Examples:
     1. "What is the current price of Bitcoin?"
     2. "Who won the latest Formula 1 race?"
     3. "Are there any delays at JFK Airport today?"
@@ -90,9 +91,9 @@ The tool `browser` uses **Brave Search Engine API**. Use your `browser` tool the
     5. "What's the latest Windows version?"
     You: (calls the browser function with the query in `default_api`)
 1. Always perform a search online if you are unsure about a user question.
-2. Important: Remember that today's date is {todayday}. Always keep this date in mind to provide time-relevant context in your search query!
-3. Search query must be as detailed as possible.
-Example of `browser` invocation:
+2. Important: Remember that today's date is {todayday}. Always keep this date in mind to provide time-relevant context in your search query.
+3. Search query must be as detailed as possible. Optimize the query.
+`browser` invocation:
     
 browser(
     q: str, 
@@ -101,7 +102,6 @@ browser(
     
 1. If you are not sure of the answer, search online.
 2. DO NOT ask permission to search online, just do it!
-3. The search query must be detailed.
 When using `browser` tool in your responses, you MUST USE CITATION, in hyperlink format. Ensure you provide a citation for each paragraph that uses information from a web search.
 Citation Usage Example:
 - User: "What is the capital of France?"
@@ -112,7 +112,7 @@ Whenever a description of an image is given, create a prompt that FLUX.1 Dev mod
     1. The prompt must be in English. Translate to English if needed.
     2. DO NOT ask for permission to generate the image, just do it!
     3. Do not create more than 1 image, even if the user requests more.
-Example of `imagine` invocation:
+`imagine` invocation:
     
 imagine(
     prompt: str, 
@@ -121,12 +121,13 @@ imagine(
     
 Supported aspect ratios: 16:9, 9:16, 1:1. Choose the best aspect ratio according to the image that will be generated.
 Tip: Add tags in the prompt such as "realistic, detailed, photorealistic, HD" and others to improve the quality of the generated image. Put as much detail as possible in the prompt. Prompt tags must be separated by commas.
+Only generate image if user explicitly asks to!
 
 You can execute Python code when needed. For instance, you can use this tool to do basic or advanced math operations.
-Always put print() in the code line! Without print() you can't get the output! You CANNOT put codeblock, if you put it the code WILL FAIL. DO NOT do linebreaks this way: "\\n", the correct is: "\n".
+Always put print() in the code line! Without print() you can't get the output! You CANNOT put codeblock, if you put it the code WILL FAIL.
 * DON'T execute dangerous code!
 
-Always follow the language of the interaction.
+Always follow the language of the interaction. DO NOT put codeblock when calling functions!
 Note: Keep in mind that you are a model still in development, this means you may make mistakes in your answer.
 '''
 
@@ -256,18 +257,12 @@ async def browser(search_query: str, search_rn: int):
 # image generation TOOL
 async def imagine(img_prompt: str, ar: str):
     # check aspect ratio 
-    if ar is None:
-        width = 1024
-        height = 1024
-    elif ar == "9:16":
-        width = 720
-        height = 1280
-    elif ar == "16:9":
-        width = 1280
-        height = 720
-    else: # 1:1 square
-        width = 1024
-        height = 1024
+    aspect_ratios = {
+        "9:16": (720, 1280),
+        "16:9": (1280, 720),
+    }
+
+    width, height = aspect_ratios.get(ar, (1024, 1024))
  
     headers = {"Authorization": f"Bearer {hf_token}", "x-use-cache": "false"}
     payload = {"inputs": f"{img_prompt}", "options": {"wait_for_model": True, "use_cache": False}, "parameters":{"width": width, "height": height}}
@@ -292,7 +287,7 @@ tool_websearch = {
             },
             "num": {
                 "type_": "INTEGER", 
-                "description": "The number of results it will return (min of 10 and max 20 results)"
+                "description": "The number of results it will return (minimum of 10 and max of 20 results)"
             }
         },
         "required": ["q", "num"]
@@ -540,7 +535,7 @@ My commands:
 - !audiodel: Deletes the current channel audio from /attachments folder. (DEV ONLY)
 - !txtdel: Deletes the current channel text from /attachments folder. (DEV ONLY)
             
-Experimental bot - Requested by {message.author.name} at {todayhour}. V3.5.89
+Experimental bot - Requested by {message.author.name} at {todayhour}. V3.5.90
             ```
             """
             msg = await message.reply(helpcmd)
@@ -625,13 +620,13 @@ async def handle_message(message):
         generation_config = {
             'temperature': 0.1,
             'top_p': 1.0,
-            'top_k': 40,
+            'top_k': 0,
             'max_output_tokens': 8192,
             'response_mime_type': 'text/plain',
         }
         
         model = genai.GenerativeModel(
-            model_name="gemini-2.0-flash-exp",
+            model_name="gemini-exp-1206",
             generation_config=generation_config,
             #system_instruction=base_system_prompt,#
             tools=[tool_python, tool_websearch, tool_imagine],
@@ -721,80 +716,37 @@ async def handle_message(message):
         attachment_history = [msg async for msg in message.channel.history(limit=15)]
         for a in attachment_history:
             if a.attachments:
-                if files and not files2 and not files3:
+                attachment_map = {
+                    (True, False, False): (files, inst_msg1),
+                    (False, True, False): (files2, inst_msg2),
+                    (True, True, False): (files2, files, inst_msg3),
+                    (False, False, True): (files3, inst_msg4),
+                    (False, True, True): (files3, files2, inst_msg6),
+                    (True, False, True): (files3, files, inst_msg5),
+                    (True, True, True): (files3, files2, files, inst_msg7),
+                }
+
+                # Check which files exist
+                file_states = (bool(files), bool(files2), bool(files3))
+
+                # Get the corresponding attachments and message
+                attachments_and_message = attachment_map.get(file_states)
+
+                if attachments_and_message:
                     formatted_history += [{
                         'role': 'user',
-                        'parts': [
-                            files,
-                            f'{inst_msg1}',
-                        ],
+                        'parts': list(attachments_and_message),
                     }]
-                elif files2 and not files and not files3:
-                    formatted_history += [{
-                        'role': 'user',
-                        'parts': [
-                            files2,
-                            f'{inst_msg2}',
-                        ],
-                    }]
-                elif files and files2 and not files3:
-                    formatted_history += [{
-                        'role': 'user',
-                        'parts': [
-                            files2,
-                            files,
-                            f'{inst_msg3}',
-                        ],
-                    }]
-                elif files3 and not files2 and not files:
-                    formatted_history += [{
-                        'role': 'user',
-                        'parts': [
-                            files3,
-                            f'{inst_msg4}',
-                        ],
-                    }]
-                    
-                elif files3 and not files and files2:
-                    formatted_history += [{
-                        'role': 'user',
-                        'parts': [
-                            files3,
-                            files2,
-                            f'{inst_msg6}',
-                        ],
-                    }]
-                    
-                elif files3 and files and not files2:
-                    formatted_history += [{
-                        'role': 'user',
-                        'parts': [
-                            files3,
-                            files,
-                            f'{inst_msg5}',
-                        ],
-                    }]
-                    
-                elif files3 and files and files2:
-                    formatted_history += [{
-                        'role': 'user',
-                        'parts': [
-                            files3,
-                            files2,
-                            files,
-                            f'{inst_msg7}',
-                        ],
-                    }]
-                    
                 else:
                     formatted_history += [{
                         'role': 'user',
                         'parts': [
-                        f'[Ignore this. There is no audio or image yet.]',
+                            f'[Ignore this. There is no audio or image yet.]',
                         ],
                     }]
                     
-            formatted_history_updated = True  # Set flag to True after updating                    
+            formatted_history_updated = True  # Set flag to True after updating
+            
         print(formatted_history)
         # Start the chat session and accumulate the response
         chat_session = await asyncio.to_thread(model.start_chat, history=formatted_history)
@@ -807,7 +759,6 @@ async def handle_message(message):
         message_chunks = []  # List to hold messages created/edited
         
         # PROCESS TOOLS BELOW
-        # this part i had to do myself coz gpt4o wasn't able to :rofl:
         for chunk in response.parts:
             if fn := chunk.function_call: # funct call
                 # PYTHON
