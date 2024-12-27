@@ -7,5 +7,5 @@ google-generativeai
 aiohttp
 duckduckgo_search
 pillow
-huggingface_cli
+aiofiles
 vertexai
