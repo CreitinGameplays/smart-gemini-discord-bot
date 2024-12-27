@@ -26,6 +26,17 @@ Note: Files with `dalle` in the name uses DALL•E 3 for generating images, mean
 
 `v3.5.py` and above do not require Groq API Key.
 
+## Setup Google Cloud account (v3.5.py and up)
+- In terminal, run the following commands:
+```
+snap install google-cloud-cli
+```
+
+```
+gcloud auth login
+```
+Then copy the link in terminal -> Choose your Google Cloud account -> Allow everything -> Copy the code it will display -> Go back to the terminal and paste the code -> Done.
+
 ## Installation
 
 1. Clone the repository:
