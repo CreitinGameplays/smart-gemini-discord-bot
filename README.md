@@ -33,9 +33,12 @@ snap install google-cloud-cli
 ```
 
 ```
-gcloud auth login
+gcloud auth application-default login
 ```
-Then copy the link in terminal -> Choose your Google Cloud account -> Allow everything -> Copy the code it will display -> Go back to the terminal and paste the code -> Done.
+Then copy the link in terminal -> Choose your Google Cloud account -> Allow everything -> Copy the code it will display -> Go back to the terminal and paste the code -> then run:
+```
+gcloud config set project YOUR_GOOGLE_CLOUD_PROJECT_ID
+```
 
 ## Installation
 
