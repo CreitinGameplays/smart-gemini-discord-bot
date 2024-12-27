@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 import random
 import os
 import io
+from io import BytesIO
 import sys
 from collections import defaultdict, deque
 from bs4 import BeautifulSoup
@@ -19,9 +20,14 @@ from PIL import Image
 import ssl
 import textwrap
 
+# for gemini
 import google.generativeai as genai
 from google.ai.generativelanguage_v1beta.types import content
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
+
+# for imagen 3
+import vertexai
+from vertexai.preview.vision_models import ImageGenerationModel
 
 # logging
 import logging
@@ -52,19 +58,25 @@ bot_token = config.get('TOKEN')
 ai_key = config.get('GEMINI_KEY')
 hf_token = config.get('HF_TOKEN')
 brave_token = config.get('BRAVE_TOKEN')
+gcp_project = config.get('GCP_PROJECT')
 
-API_URL = "https://api-inference.huggingface.co/models/XLabs-AI/flux-RealismLora"
-
+### deprecated ###
+API_URL = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev"
 API_URL2 = "https://api-inference.huggingface.co/models/openai/whisper-large-v3-turbo"
+##################
 
 # Some variables you might want to change.
 SEARCH_SNIPPET_SIZE = 6000 # Website content max length size
 MAX_CHAT_HISTORY_MESSAGES = 20 # Max number of messages that will be stored in chat history
 
+# MODELS
+model_id = "gemini-exp-1206"
+image_model_id = "imagen-3.0-fast-generate-001"
+
 # You can modify this system prompt as needed
 base_system_prompt = f'''
-You are a Web AI assistant named Gemini, trained by Google. You were designed to provide accurate and real-time information to the user, by using your `browser` tool. Your primary feature is the ability to search the internet and retrieve relevant, high-quality, and recent information to answer user queries. When answering my questions, you can write and run code snippets using the libraries in the context. Code must be valid self-contained Python snippets with no imports and no references to APIs that are not in the context except for Python built-in libraries. You cannot use any parameters or fields that are not explicitly defined in the APIs in the context. Use "print" to output any information to the screen that you need for responding to the user. The code snippets should be readable, efficient, and directly relevant to the user query.
-You are currently operating within a Discord bot, and the bot developer is the user "creitingameplays". Never put "discord_username: (message content)" in your responses. Your current knowledge cutoff is **August 2024**, but you can access up-to-date information using `browser` tool. Today is TODAYTIME00. You can't provide the current time.
+You are a Web AI assistant named Gemini, trained by Google. You were designed to provide accurate and real-time information to the user, by using your `browser` tool. Your primary feature is the ability to search the internet and retrieve relevant, high-quality, and recent information to answer user queries.
+You are currently operating within a Discord bot, and the bot developer is the user "creitingameplays". Never put "discord_username: (message content)" in your responses. Your current knowledge cutoff is August 2024, but you can access up-to-date information using `browser` tool. Today is TODAYTIME00. You can't provide the current time. Your current model ID: `{model_id}`. Your image model ID: `{image_model_id}`.
 
 DEVELOPER MODE: ENABLED
 
@@ -76,7 +88,8 @@ Your features:
 - Image Generation;
 - Python code execution.
 
-The tool `browser` uses **Brave Search Engine API**. Use your `browser` tool the user asks for the most up-to-date information about something (information up to TODAYTIME00) or about some term you are totally unfamiliar with (it might be new). 
+# BROWSER INSTRUCTIONS
+The tool `browser` uses **Brave Search Engine API**. Use your `browser` tool when the user asks for the most up-to-date information about something (information up to TODAYTIME00) or about some term you are totally unfamiliar with (it might be new).
 Examples:
     1. "What is the current price of Bitcoin?"
     2. "Who won the latest Formula 1 race?"
@@ -85,16 +98,9 @@ Examples:
     5. "What's the latest Windows version?"
     You: (calls the browser function with the query in `default_api`)
 1. Always perform a search online if you are unsure about a user question.
-2. Important: Remember that today's date is TODAYTIME00. Always keep this date in mind to provide time-relevant context in your search query. Only provide the month (name) and year in search query.
+2. Remember that today's date is TODAYTIME00. Always keep this date in mind to provide time-relevant context in your search query. Only provide the month (name) and year in search query.
 3. Search query must be as detailed as possible. Optimize the query.
 4. Also search online when user sends an audio message asking something you don't know.
-`browser` invocation:
-    
-browser(
-    q: str, 
-    num: int
-    )
-    
 1. If you don't know the answer, search online.
 2. DO NOT ask permission to search online, just do it!
 When using `browser` tool in your responses, you MUST USE CITATION, in hyperlink format. Ensure you provide a citation for each paragraph that uses information from a web search.
@@ -103,27 +109,29 @@ Citation Usage Example:
 - You: "The capital of France is Paris. [1](https://en.wikipedia.org/wiki/Paris).
 Paris is not only the capital of France but also its largest city. It is located in the north-central part of the country. [2](https://en.wikipedia.org/wiki/Paris)."
 
-Whenever the user asks you to generate an image, create a prompt that FLUX.1 Dev model can use to generate the image and abide to the following policy:
+# IMAGE GENERATION INSTRUCTIONS
+Whenever the user asks you to generate an image, create a prompt that `{image_model_id}` model can use to generate the image and abide to the following policy:
     1. The prompt must be in English. Translate to English if needed.
     2. DO NOT ask for permission to generate the image, just do it!
     3. Do not create more than 1 image, even if the user requests more.
-`imagine` invocation:
-    
-imagine(
-    prompt: str, 
-    ar: str
-    )
-    
 Supported aspect ratios: 16:9, 9:16, 1:1. Choose the best aspect ratio according to the image that will be generated.
 Tip: Add tags in the prompt such as "realistic, detailed, photorealistic, HD" and others to improve the quality of the generated image. Put as much detail as possible in the prompt. Prompt tags must be separated by commas.
 Only generate image if user explicitly asks to!
 
+# CODE EXECTUTION INSTRUCTIONS
 You can execute Python code when needed. For instance, you can use this tool to do basic or advanced math operations.
-Always put print() in the code line! Without print() you can't get the output! You CANNOT put codeblock, if you put it the code WILL FAIL.
+Example:
+    1. "Count r's in strawberry word using code?"
+    2. "What is 38 * 4 - 5?"
+Always put print() in the code line! Without print() you can't get the output! You CANNOT put codeblock in this, if you put it the code WILL FAIL.
 * DON'T execute dangerous code!
 
+# ADDITIONAL INSTRUCTIONS
 Always follow the language of the interaction. DO NOT put codeblock when calling functions!
-Note: Keep in mind that you are a model still in development, this means you may make mistakes in your answer.
+Please always skip a line when you are about to write a code in a codeblock.
+Keep in mind that you are a model still in development, this means you may make mistakes in your answer.
+
+DO NOT OUTPUT TEXT-ONLY WHEN CALLING FUNCTIONS.
 '''
 
 # TOOLS
@@ -245,26 +253,46 @@ async def browser(search_query: str, search_rn: int):
         logger.error("An error occurred:\n" + traceback.format_exc())
         print(f'Error in `search` function: {e}')
         return f'Error in `search` function: {e}'
-
+        
 # image generation TOOL
 async def imagine(img_prompt: str, ar: str):
-    # check aspect ratio 
-    aspect_ratios = {
-        "9:16": (720, 1280),
-        "16:9": (1280, 720),
+    vertexai.init(project=gcp_project, location="us-central1")
+    img_info_var = {
+        "is_error": 0,
+        "img_error_msg": "null"
     }
-    width, height = aspect_ratios.get(ar, (1024, 1024))
-    
-    headers = {"Authorization": f"Bearer {hf_token}", "x-use-cache": "false"}
-    payload = {"inputs": f"{img_prompt}", "options": {"wait_for_model": True, "use_cache": False}, "parameters":{"width": width, "height": height}}
-    async with aiohttp.ClientSession() as session:
-        async with session.post(API_URL, headers=headers, json=payload) as response:
-            image_file = await response.read()  # asynchronously get response content
-            image = f"output_{random.randint(1000, 9999)}.png"
-            with open(image, "wb") as file:
-                file.write(image_file)
-            return image
-            
+    generation_model = ImageGenerationModel.from_pretrained("imagen-3.0-fast-generate-001")
+    try:
+        image_response = generation_model.generate_images(
+            prompt=img_prompt,
+            number_of_images=1,
+            aspect_ratio=ar,
+            safety_filter_level="block_some",
+        )
+        
+        generated_image = image_response[0]
+        image_bytes = generated_image._image_bytes
+        # Load and save the image
+        image = Image.open(BytesIO(image_bytes))
+        image_filename = f"output_{random.randint(1000, 9999)}.png"
+        image.save(image_filename)
+        img_info_var = {
+            "is_error": 0,
+            "img_error_msg": "null",
+            "filename": image_filename
+        }
+        
+        return img_info_var
+        print("Image saved!")
+        
+    except Exception as e:
+        print(f"An error occurred when generating image: {e}")
+        img_info_var = {
+            "is_error": 1,
+            "img_error_msg": f"{e}",
+            }
+        return img_info_var
+        
 # Define the functions schema for Gemini
 tool_websearch = {
     "name": "browser",
@@ -287,7 +315,7 @@ tool_websearch = {
 
 tool_imagine = {
     "name": "imagine",
-    "description": "Generate an image using the FLUX Dev model based on the prompt",
+    "description": f"Generate an image using the {image_model_id} model based on the prompt",
     "parameters": {
         "type_": "OBJECT",
         "properties": {
@@ -306,16 +334,15 @@ tool_imagine = {
 
 tool_python = {
     "name": "python",
-    "description": "Run Python code. Must be a SINGLE LINE OF CODE.",
+    "description": "Run Python code. Alias: Python code, code, code execution, Python execution, Python exec.",
     "parameters": {
         "type_": "OBJECT",
         "properties": {
-            "code": {
+            "code_text": {
                 "type_": "STRING",
-                "description": "Python code. Must be one single line.",
+                "description": "Python code. You can skip lines.",
             },
         },
-        "required": ["code"]
     }
 }
 
@@ -529,7 +556,7 @@ My commands:
 - !audiodel: Deletes the current channel audio from /attachments folder. (DEV ONLY)
 - !txtdel: Deletes the current channel text from /attachments folder. (DEV ONLY)
             
-Experimental bot - Requested by {message.author.name} at {todayhour1}. V3.5.91a
+Experimental bot - Requested by {message.author.name} at {todayhour1}. V3.5.92.1
             ```
             """
             msg = await message.reply(helpcmd)
@@ -588,7 +615,7 @@ async def handle_message(message):
 
         async with message.channel.typing():
             await asyncio.sleep(1)
-            bot_message = await message.reply('<a:generating:1246530696168734740> _ _')
+            bot_message = await message.reply('<a:gemini_sparkles:1321895555676504077> _ _')
             await asyncio.sleep(0.1)
             
         user_message = message.content
@@ -614,7 +641,7 @@ async def handle_message(message):
         genai.configure(api_key=ai_key)
         
         generation_config = {
-            'temperature': 0.1,
+            'temperature': 0.4,
             'top_p': 1.0,
             'top_k': 0,
             'max_output_tokens': 8192,
@@ -622,9 +649,9 @@ async def handle_message(message):
         }
         
         model = genai.GenerativeModel(
-            model_name="gemini-exp-1206",
+            model_name=model_id,
             generation_config=generation_config,
-            #system_instruction=base_system_prompt,#
+            #system_instruction=base_system_prompt,
             tools=[tool_python, tool_websearch, tool_imagine],
             safety_settings={
                 HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
@@ -704,7 +731,7 @@ async def handle_message(message):
         formatted_history += [{
             'role': 'model',
             'parts': [
-                f'My instructions:\n{base_system_prompt.replace("TODAYTIME00", todayday2)}',
+                f'My system instructions:\n{base_system_prompt.replace("TODAYTIME00", todayday2)}',
                 ],
             }]
         
@@ -824,25 +851,38 @@ async def handle_message(message):
                             "value": value
                         })
                     
-                    msg_1 = "-# Generating Image... <a:searchingweb:1246248294322147489>"
+                    msg_1 = "-# Generating Image... <a:gemini_sparkles:1321895555676504077>"
                     msg_2 = "-# Done <:checkmark:1220809843414270102>"
+                    msg_3 = "-# An Error Occurred <:error_icon:1295348741058068631>"
+                    
                     await bot_message.edit(content=f"{msg_1}")
                     
                     imagine_result = await imagine(imagine_values[0]['value'], (imagine_values[1]['value']))
-
-                    await bot_message.edit(content=f"{msg_2}")
-            
-                    await asyncio.sleep(0.5)
-                    await message.reply(file=discord.File(imagine_result))
-                    await asyncio.sleep(0.5)
                     
-                    os.remove(imagine_result)
-                    response = chat_session.send_message(
-                        genai.protos.Content(
-                        parts=[genai.protos.Part(
-                            function_response = genai.protos.FunctionResponse(
-                                name='imagine',
-                                response={'result': "IMAGE_GENERATED=YES"}))]))
+                    # No success
+                    if imagine_result["is_error"] == 1:
+                        await bot_message.edit(content=f'{msg_3}')
+                        await asyncio.sleep(0.5)
+                        response = chat_session.send_message(
+                            genai.protos.Content(
+                            parts=[genai.protos.Part(
+                                function_response = genai.protos.FunctionResponse(
+                                    name='imagine',
+                                    response={'result': f"IMAGE_GENERATED=NO\nERROR_MSG=Error occurred on image model: {imagine_result['img_error_msg']}"}))]))
+                    # sucecess
+                    if imagine_result["is_error"] == 0:
+                        await bot_message.edit(content=f"{msg_2}")
+                        await asyncio.sleep(0.5)
+                        await message.reply(file=discord.File(imagine_result["filename"]))
+                        await asyncio.sleep(0.5)
+                    
+                        os.remove(imagine_result["filename"])
+                        response = chat_session.send_message(
+                            genai.protos.Content(
+                            parts=[genai.protos.Part(
+                                function_response = genai.protos.FunctionResponse(
+                                    name='imagine',
+                                    response={'result': "IMAGE_GENERATED=YES"}))]))
                 else: # Nothing
                     return
                 
@@ -889,4 +929,4 @@ try:
 except Exception as e:
     print(f'Error starting the bot: {e}')
     
-# oh man
+# oh man !

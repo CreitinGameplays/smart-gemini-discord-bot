@@ -20,8 +20,9 @@ This is a Discord bot built using the [py-cord](https://github.com/Pycord-Develo
 
 `v3.5` and above:
 - Brave Search API key (free but requires cc)
+- New: Google Cloud account with Imagen 3 access (needs 💵)
 
-Note: Files with `dalle` in the name uses DALL•E 3 for generating images, means you'll need an OpenAI API Key + waste some money with DALL•E 3. The rest uses free image generation model.
+Note: Files with `dalle` in the name uses DALL•E 3 for generating images, means you'll need an OpenAI API Key + waste some money with DALL•E 3. The rest uses free image generation model, except `v3.5.py` and up.
 
 `v3.5.py` and above do not require Groq API Key.
 
@@ -45,6 +46,7 @@ Note: Files with `dalle` in the name uses DALL•E 3 for generating images, mean
     GROQ_KEY=your_groq_api_key
     HF_TOKEN=your_hf_token
     BRAVE_TOKEN=your_brave_token
+    GCP_PROJECT=your_google_cloud_project
     ```
 
 ## Usage
