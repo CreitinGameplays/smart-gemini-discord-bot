@@ -7,4 +7,8 @@ google-generativeai
 aiohttp
 duckduckgo_search
 pillow
+<<<<<<< HEAD
+=======
+aiofiles
+>>>>>>> eb9ea737578d52d34a2ca15075bd9fa325e0e4be
 vertexai
