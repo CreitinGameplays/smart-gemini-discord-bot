@@ -53,12 +53,20 @@ logger.setLevel(logging.ERROR)
 logger.addHandler(handler)
 
 # load .env
+"""
 config = dotenv_values(".env")
 bot_token = config.get('TOKEN')
 ai_key = config.get('GEMINI_KEY')
 hf_token = config.get('HF_TOKEN')
 brave_token = config.get('BRAVE_TOKEN')
 gcp_project = config.get('GCP_PROJECT')
+"""
+
+bot_token = os.getenv('TOKEN')
+ai_key = os.getenv('GEMINI_KEY')
+hf_token = os.getenv('HF_TOKEN')
+brave_token = os.getenv('BRAVE_TOKEN')
+gcp_project = os.getenv('GCP_PROJECT')
 
 ### deprecated ###
 API_URL = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev"
@@ -641,7 +649,7 @@ async def handle_message(message):
         genai.configure(api_key=ai_key)
         
         generation_config = {
-            'temperature': 0.4,
+            'temperature': 0.5,
             'top_p': 1.0,
             'top_k': 0,
             'max_output_tokens': 8192,
