@@ -70,7 +70,7 @@ SEARCH_SNIPPET_SIZE = 6000 # Website content max length size
 MAX_CHAT_HISTORY_MESSAGES = 20 # Max number of messages that will be stored in chat history
 
 # MODELS
-model_id = "gemini-exp-1206"
+model_id = "gemini-2.0-flash"
 image_model_id = "imagen-3.0-fast-generate-001"
 
 # You can modify this system prompt as needed
