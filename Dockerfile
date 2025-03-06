@@ -1,0 +1,10 @@
+FROM python:3.5-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY bot/ .
+
+CMD ["python", "v3.5.py"]
