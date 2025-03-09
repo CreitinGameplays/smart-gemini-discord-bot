@@ -314,7 +314,7 @@ tool_websearch = {
             },
             "num": {
                 "type_": "INTEGER", 
-                "description": "The number of results it will return (minimum of 10 and max of 20 results)"
+                "description": "The number of results it will return (minimum of 15 and max of 30 results)"
             }
         },
         "required": ["q", "num"]
@@ -564,7 +564,7 @@ My commands:
 - !audiodel: Deletes the current channel audio from /attachments folder. (DEV ONLY)
 - !txtdel: Deletes the current channel text from /attachments folder. (DEV ONLY)
             
-Experimental bot - Requested by {message.author.name} at {todayhour1}. V3.5.92.1
+Experimental bot - Requested by {message.author.name} at {todayhour1}. V3.5.92.2
             ```
             """
             msg = await message.reply(helpcmd)
@@ -651,7 +651,7 @@ async def handle_message(message):
         generation_config = {
             'temperature': 0.5,
             'top_p': 1.0,
-            'top_k': 0,
+            'top_k': 40,
             'max_output_tokens': 8192,
             'response_mime_type': 'text/plain',
         }
