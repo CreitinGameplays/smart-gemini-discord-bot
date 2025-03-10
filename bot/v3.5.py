@@ -29,6 +29,22 @@ from google.generativeai.types import HarmCategory, HarmBlockThreshold
 import vertexai
 from vertexai.preview.vision_models import ImageGenerationModel
 
+# logging in GCP
+import base64
+import os
+from google.oauth2 import service_account
+
+THE_CREDENTIALS = json.decode(base64.decode(os.environ["GCP_CREDS"]))
+if not THE_CREDENTIALS:
+    raise ValueError("Environment variable GOOGLE_CREDENTIALS_B64 is not set")
+
+# Decode the base64 string to get the JSON credentials.
+decoded_credentials = base64.b64decode(THE_CREDENTIALS).decode("utf-8")
+credentials_info = json.loads(decoded_credentials)
+
+# Create a Credentials object from the JSON credentials.
+credentials = service_account.Credentials.from_service_account_info(credentials_info)
+
 # logging
 import logging
 from logging.handlers import RotatingFileHandler
@@ -264,7 +280,7 @@ async def browser(search_query: str, search_rn: int):
         
 # image generation TOOL
 async def imagine(img_prompt: str, ar: str):
-    vertexai.init(project=gcp_project, location="us-central1")
+    vertexai.init(project=gcp_project, location="us-central1", credentials=credentials)
     img_info_var = {
         "is_error": 0,
         "img_error_msg": "null"
