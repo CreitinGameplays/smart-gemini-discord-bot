@@ -939,7 +939,7 @@ async def handle_message(message):
 
                 # Remove some text on first chunk
                 new_chunks[0] = new_chunks[0].replace("Gemini:", "", 1)
-                new_chunks[0] = new_chunks[0].replace("Language Model#3241", "", 1)
+                new_chunks[0] = new_chunks[0].replace("Language Model#3241:", "", 1)
     
                 # Fix empty chunks
                 new_chunks = ["‎ " if chunk == "\n" else chunk for chunk in new_chunks]
