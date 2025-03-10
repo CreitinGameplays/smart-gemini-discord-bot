@@ -34,9 +34,9 @@ import base64
 import os
 from google.oauth2 import service_account
 
-THE_CREDENTIALS = json.decode(base64.decode(os.environ["GCP_CREDS"]))
+THE_CREDENTIALS = os.environ.get("GCP_CREDS")
 if not THE_CREDENTIALS:
-    raise ValueError("Environment variable GOOGLE_CREDENTIALS_B64 is not set")
+    raise ValueError("Environment variable GCP_CREDS is not set")
 
 # Decode the base64 string to get the JSON credentials.
 decoded_credentials = base64.b64decode(THE_CREDENTIALS).decode("utf-8")
