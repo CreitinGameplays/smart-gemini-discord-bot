@@ -948,7 +948,7 @@ async def handle_message(message):
                 continue
 
         # Finalize all chunks by removing the animation
-        if message_chunks and not is_voice_message:  # Only attempt to edit if there are messages
+        if message_chunks:
             for i, msg in enumerate(message_chunks):
                 try:
                     await msg.edit(content=new_chunks[i])
