@@ -893,35 +893,67 @@ async def handle_message(message):
                                     response={'result': "IMAGE_GENERATED=YES"}))]))
                 else: # Nothing
                     return
-                
+        #
         # NORMAL RESPONSES
         for chunk in response:
-            if chunk.text:  # Regular text response
-                full_response += chunk.text
+            try:
+                # Check if chunk is a function response first
+                if hasattr(chunk, 'function_call'):
+                    continue  # Skip function call chunks as they're already handled
+        
+                # Handle text responses
+                if isinstance(chunk, str):
+                    text_content = chunk
+                elif hasattr(chunk, 'text') and chunk.text:
+                    text_content = chunk.text
+                elif hasattr(chunk, 'parts'):
+                    # Handle response parts after function calls
+                    for part in chunk.parts:
+                        if hasattr(part, 'text') and part.text:
+                            text_content = part.text
+                            break
+                    else:
+                        continue
+                else:
+                    print(f"Skipping unhandled chunk type: {type(chunk)}")
+                    continue
+
+                full_response += text_content
                 new_chunks = split_msg(full_response)
-            
+
                 # Remove some text on first chunk
                 new_chunks[0] = new_chunks[0].replace("Gemini:", "", 1)
-                new_chunks[0] = new_chunks[0].replace("Language Model#3241:", "", 1)
-            
+                new_chunks[0] = new_chunks[0].replace("Language Model#3241", "", 1)
+    
                 # Fix empty chunks
                 new_chunks = ["‎ " if chunk == "\n" else chunk for chunk in new_chunks]
-            
+
                 # Update messages
                 for i in range(len(new_chunks)):
                     if i < len(message_chunks):
                         await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
                     else:
                         if i == 0:
-                           await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
-                           message_chunks.append(bot_message)
+                            await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                            message_chunks.append(bot_message)
                         else:
                             new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
                             message_chunks.append(new_msg)
-                            
+
+            except AttributeError as e:
+                print(f"Attribute error handling chunk: {e}")
+                continue
+            except Exception as e:
+                print(f"Error processing chunk: {e}")
+                continue
+
         # Finalize all chunks by removing the animation
-        for i, msg in enumerate(message_chunks):
-            await msg.edit(content=new_chunks[i])
+        if message_chunks and not is_voice_message:  # Only attempt to edit if there are messages
+            for i, msg in enumerate(message_chunks):
+                try:
+                    await msg.edit(content=new_chunks[i])
+                except Exception as e:
+                    print(f"Error finalizing message {i}: {e}")
         
     except Exception as e:
         logger.error("An error occurred:\n" + traceback.format_exc())
