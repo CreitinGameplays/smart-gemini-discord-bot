@@ -365,9 +365,10 @@ tool_python = {
         "properties": {
             "code_text": {
                 "type_": "STRING",
-                "description": "Python code. You can skip lines.",
-            },
+                "description": "Python code. You can skip lines by using \n.",
+            }
         },
+        "required": ["code_text"]
     }
 }
 
@@ -666,8 +667,8 @@ async def handle_message(message):
         genai.configure(api_key=ai_key)
         
         generation_config = {
-            'temperature': 0.5,
-            'top_p': 1.0,
+            'temperature': 0.6,
+            'top_p': 0.9,
             'top_k': 40,
             'max_output_tokens': 8192,
             'response_mime_type': 'text/plain',
