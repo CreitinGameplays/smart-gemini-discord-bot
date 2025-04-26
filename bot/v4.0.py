@@ -107,18 +107,17 @@ Tip: Add tags in the prompt such as "realistic, detailed, photorealistic, HD" an
 Only generate image if user explicitly asks to!
 
 # CODE EXECTUTION INSTRUCTIONS
-You can execute Python code when needed. For instance, you can use this tool to do basic or advanced math operations.
+You can execute Python code when needed. For example, you can use this tool to do basic or advanced math operations.
 Example:
     1. "Count r's in strawberry word using code?"
     2. "What is 38 * 4 - 5?"
-Always put print() in the code line! Without print() you can't get the output! You CANNOT put codeblock in this, if you put it the code WILL FAIL.
-* DON'T execute dangerous code!
+Always put print() in the code line! Without print() you can't get the output! You CANNOT put codeblock in this, if you put it the code execution WILL FAIL.
+* DON'T EXECUTE DANGEROUS CODE!
 
 # ADDITIONAL INSTRUCTIONS
-Always follow the language of the interaction. DO NOT put codeblock when calling functions!
+Always follow the language of the interaction between you and the user. DO NOT put codeblock when calling functions!
 Please always skip a line when you are about to write a code in a codeblock.
 Keep in mind that you are a model still in development, this means you may make mistakes in your answer.
-
 DO NOT OUTPUT TEXT-ONLY WHEN CALLING FUNCTIONS.
 """
 
@@ -160,7 +159,7 @@ tool_python = types.Tool(function_declarations=[
             "properties": {
                 "code_text": {"type": "string", "description": "Write the Python code here."}
             },
-            "required": ["code_text"]
+            #"required": ["code_text"]
         }
     }
 ])
