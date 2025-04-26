@@ -3,7 +3,7 @@ gradio_client
 groq
 beautifulsoup4
 python-dotenv
-google-generativeai
+google-genai
 aiohttp
 duckduckgo_search
 pillow
