@@ -705,3 +705,4 @@ try:
     bot.run(bot_token)
 except Exception as e:
     print(f'Error starting the bot: {e}')
+# lol
