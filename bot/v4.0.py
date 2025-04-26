@@ -468,8 +468,8 @@ async def handle_message(message):
         client = Client(api_key=ai_key)
         config = types.GenerateContentConfig(
             temperature=0.6,
-            top_p=0.95,
-            top_k=40,
+            top_p=1.0,
+            top_k=50,
             max_output_tokens=8192,
             response_mime_type="text/plain",
             tools=[tool_python, tool_websearch, tool_imagine],
