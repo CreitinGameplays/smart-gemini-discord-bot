@@ -589,6 +589,7 @@ async def handle_message(message):
         )
         full_response = ""
         message_chunks = []
+        post_function_call = False
         async def process_response_text(response, message, bot_message, message_chunks):
             try:
                 if response and hasattr(response, 'text') and response.text:
@@ -654,6 +655,7 @@ async def handle_message(message):
                             contents=chat_contents,
                             config=config
                         )
+                        post_function_call = True
                         await process_response_text(response, message, bot_message, message_chunks)
                     # WEB SEARCH
                     elif fn.name == "browser":
@@ -679,6 +681,7 @@ async def handle_message(message):
                             contents=chat_contents,
                             config=config
                         )
+                        post_function_call = True
                         await process_response_text(response, message, bot_message, message_chunks)
                     # IMAGINE
                     elif fn.name == "imagine":
@@ -713,6 +716,7 @@ async def handle_message(message):
                             contents=chat_contents,
                             config=config
                         )
+                        post_function_call = True
                         await process_response_text(response, message, bot_message, message_chunks)
                 elif chunk.text:
                     full_response += chunk.text
@@ -722,15 +726,21 @@ async def handle_message(message):
                     
                     new_chunks = ["‎ " if chunk == "\n" else chunk for chunk in new_chunks]
                     for i in range(len(new_chunks)):
-                        if i < len(message_chunks):
-                            await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                        if post_function_call:
+                            # Always send a new message after a function call
+                            new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                            message_chunks.append(new_msg)
+                            post_function_call = False  # Only for the first chunk after function call
                         else:
-                            if i == 0:
-                                await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
-                                message_chunks.append(bot_message)
+                            if i < len(message_chunks):
+                                await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
                             else:
-                                new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
-                                message_chunks.append(new_msg)
+                                if i == 0:
+                                    await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                    message_chunks.append(bot_message)
+                                else:
+                                    new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                    message_chunks.append(new_msg)
             except Exception as e:
                 print(f"Error processing chunk: {e}")
                 continue
