@@ -159,7 +159,7 @@ tool_python = types.Tool(function_declarations=[
             "properties": {
                 "code_text": {"type": "string", "description": "Write the Python code here."}
             },
-            #"required": ["code_text"]
+            "required": ["code_text"]
         }
     }
 ])
