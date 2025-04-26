@@ -57,7 +57,7 @@ gcp_project = os.getenv('GCP_PROJECT')
 
 SEARCH_SNIPPET_SIZE = 6000
 MAX_CHAT_HISTORY_MESSAGES = 20
-model_id = "gemini-2.0-flash"
+model_id = "gemini-2.5-flash-preview-04-17"
 image_model_id = "imagen-3.0-fast-generate-001"
 
 # SYSTEM PROMPT
