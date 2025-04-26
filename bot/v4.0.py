@@ -673,6 +673,8 @@ async def handle_message(message):
                     full_response += chunk.text
                     new_chunks = split_msg(full_response)
                     new_chunks[0] = new_chunks[0].replace("Gemini:", "", 1)
+                    new_chunks[0] = new_chunks[0].replace("Language Model#3241:", "", 1)
+                    
                     new_chunks = ["‎ " if chunk == "\n" else chunk for chunk in new_chunks]
                     for i in range(len(new_chunks)):
                         if i < len(message_chunks):
