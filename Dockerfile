@@ -7,4 +7,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY bot/ .
 
-CMD ["python", "v3.5.py"]
+CMD ["python", "v4.0.py"]
