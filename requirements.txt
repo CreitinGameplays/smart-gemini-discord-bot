@@ -4,6 +4,7 @@ groq
 beautifulsoup4
 python-dotenv
 google-genai
+google-generativeai
 aiohttp
 duckduckgo_search
 pillow
