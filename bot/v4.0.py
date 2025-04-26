@@ -639,7 +639,7 @@ async def handle_message(message):
                         await bot_message.edit(content=f"-# Done <a:brackets:1300121114869235752>")
                         function_response_part = types.Part.from_function_response(
                             name="python",
-                            response={"result": python_result}
+                            response={"result": str(python_result)}
                         )
                         chat_contents.append(types.Content(
                             role="model",
