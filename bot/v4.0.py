@@ -74,6 +74,7 @@ Your features:
 - Browser;
 - Image Generation;
 - Python code execution.
+- Understand YouTube videos.
 
 # BROWSER INSTRUCTIONS
 The tool `browser` uses **Brave Search Engine API**. Use your `browser` tool when the user asks for the most up-to-date information about something (information up to TODAYTIME00) or about some term you are totally unfamiliar with (it might be new).
@@ -341,6 +342,26 @@ def exec_python(code):
     finally:
         sys.stdout = sys.__stdout__
 
+def extract_youtube_url(text):
+    """Extract and normalize YouTube video URL from text."""
+    if not text:
+        return None
+
+    # Regex should capture an 11-character video ID from common YouTube URL formats,
+    # regardless of extra query parameters (like ?si=...)
+    youtube_regex = (
+        r'(?i)(?:https?:\/\/)?(?:www\.)?(?:'
+        r'youtube\.com\/(?:(?:watch\?(?:.*&)?v=)|(?:embed\/)|(?:v\/))|'
+        r'youtu\.be\/'
+        r')([a-zA-Z0-9_-]{11})(?:\S+)?'
+    )
+    match = re.search(youtube_regex, text)
+    if match:
+        video_id = match.group(1)
+        # Return a normalized URL using the standard YouTube URL format
+        return f"https://youtube.com/watch?v={video_id}"
+    return None
+    
 # Restart
 async def restart_bot():
     os.execv(sys.executable, ['python'] + sys.argv)
@@ -532,6 +553,25 @@ async def handle_message(message):
                     types.Part.from_text(text="[Instructions: This is the last text file. Use as context.]")
                 ]
             ))
+
+        youtube_url = extract_youtube_url(message.content)
+        if youtube_url:
+            chat_contents.append(
+                types.Content(
+                    role="user",
+                    parts=[
+                        types.Part.from_uri(
+                            file_uri=youtube_url,
+                            mime_type="video/*"
+                        ),
+                        types.Part.from_text(
+                            text="[Instructions: Process this YouTube video and respond to the user about its content.]"
+                        )
+                    ]
+                )
+            )
+            user_message += " [This message contains a YouTube video...]"
+            print(f"Processing YouTube URL: {youtube_url}")
         # Add user message
         chat_contents.append(types.Content(
             role="user",
