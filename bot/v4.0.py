@@ -154,11 +154,11 @@ tool_imagine = types.Tool(function_declarations=[
 tool_python = types.Tool(function_declarations=[
     {
         "name": "python",
-        "description": "Run Python code.",
+        "description": "Execute Python code snippets.",
         "parameters": {
             "type": "object",
             "properties": {
-                "code_text": {"type": "string", "description": "Python code."}
+                "code_text": {"type": "string", "description": "Write the Python code here."}
             },
             "required": ["code_text"]
         }
