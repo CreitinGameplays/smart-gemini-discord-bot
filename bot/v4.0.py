@@ -592,7 +592,7 @@ async def handle_message(message):
         async def process_response_text(response, message, bot_message, message_chunks):
             try:
                 if response and hasattr(response, 'text') and response.text:
-                    full_response = response.text
+                    full_response += response.text
                     new_chunks = split_msg(full_response) if full_response else []
                     if not new_chunks or not isinstance(new_chunks, list):
                         new_chunks = ["..."]
