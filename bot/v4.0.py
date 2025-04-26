@@ -329,11 +329,13 @@ async def imagine(img_prompt: str, ar: str):
 
 def exec_python(code):
     code = textwrap.dedent(code)
+    print(code)
     buffer = io.StringIO()
     sys.stdout = buffer
     try:
         exec(code)
         output = buffer.getvalue()
+        print('output:' + output)
         return output
     except Exception as e:
         return f"An error occurred: {e}"
