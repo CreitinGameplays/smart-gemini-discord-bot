@@ -616,153 +616,171 @@ async def handle_message(message):
         message_chunks = []
         post_function_call = False
 
-        async def process_response_text(chunks, message, bot_message, message_chunks):
+        async def process_response_text(response, message, bot_message, message_chunks):
             nonlocal full_response
             try:
-                for chunk in chunks:
-                    if hasattr(chunk, 'text') and chunk.text:
-                        full_response += chunk.text
-                        new_chunks = split_msg(full_response) if full_response else []
-                        if not new_chunks or not isinstance(new_chunks, list):
-                            new_chunks = ["..."]
-                        if new_chunks:
-                            new_chunks[0] = new_chunks[0].replace("Gemini:", "", 1)
-                            new_chunks[0] = new_chunks[0].replace("Language Model#3241:", "", 1)
+                # Only accumulate the text part of the response; ignore function_call fields.
+                text_part = response.text if hasattr(response, 'text') and response.text else ""
+                if text_part:
+                    full_response += text_part
+                new_chunks = split_msg(full_response) if full_response else []
+                if not new_chunks or not isinstance(new_chunks, list):
+                    new_chunks = ["..."]
 
-                        new_chunks = ["‎ " if chunk == "\n" else chunk for chunk in new_chunks]
-                        for i in range(len(new_chunks)):
-                            try:
-                                if i < len(message_chunks):
-                                    if message_chunks[i]:
-                                        await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
-                                else:
-                                    if i == 0 and bot_message:
-                                        await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
-                                        message_chunks.append(bot_message)
-                                    else:
-                                        new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
-                                        message_chunks.append(new_msg)
-                            except Exception as e:
-                                logger.error(f"Error updating message {i}: {e}")
-                                continue
-                        for i in range(len(message_chunks)):
-                            try:
-                                if i < len(new_chunks) and message_chunks[i]:
-                                    await message_chunks[i].edit(content=new_chunks[i])
-                            except Exception as e:
-                                logger.error(f"Error finalizing message {i}: {e}")
-                        return new_chunks
-            except Exception as e:
-                logger.error(f"Error in process_response_text: {e}")
-                return None
+                # Clean up the first chunk (remove unwanted prefixes)
+                if new_chunks:
+                    new_chunks[0] = new_chunks[0].replace("Gemini:", "", 1)
+                    new_chunks[0] = new_chunks[0].replace("Language Model#3241:", "", 1)
 
-        # Main Gemini streaming and function call loop
-        while True:
-            response_stream = client.models.generate_content_stream(
-                model=model_id,
-                contents=chat_contents,
-                config=config
-            )
-            function_call_handled = False
+                new_chunks = ["‎ " if chunk.strip() == "" else chunk for chunk in new_chunks]
 
-            try:
-                for chunk in response_stream:
-                    if hasattr(chunk, "function_calls") and chunk.function_calls:
-                        fn = chunk.function_calls[0]
-                        logger.debug(f"Handling function call: {fn.name} - {fn.args}")
-
-                        # PYTHON FUNCTION CALL
-                        if fn.name == "python":
-                            code_text = fn.args.get('code_text', '')
-                            await bot_message.edit(content=f"-# Executing... <a:brackets:1300121114869235752>")
-                            python_result = exec_python(code_text)
-                            await bot_message.edit(content=f"-# Done <a:brackets:1300121114869235752>")
-                            cleaned_result = clean_result(python_result)
-                            function_response_part = types.Part.from_function_response(
-                                name="python",
-                                response={"result": cleaned_result}
-                            )
-                            chat_contents.append(types.Content(
-                                role="model",
-                                parts=[types.Part(function_call=fn)]
-                            ))
-                            chat_contents.append(types.Content(
-                                role="user",
-                                parts=[function_response_part]
-                            ))
-                            function_call_handled = True
-                            break  # break out of for-loop to restart while-loop after function call
-
-                        # WEB SEARCH FUNCTION CALL
-                        elif fn.name == "browser":
-                            q = fn.args.get('q', '')
-                            num = fn.args.get('num', 15)
-                            await bot_message.edit(content=f'-# Searching \'{q}\' <a:searchingweb:1246248294322147489>')
-                            wsearch_result = await browser(q, num)
-                            await bot_message.edit(content='-# Reading results... <a:searchingweb:1246248294322147489>')
-                            function_response_part = types.Part.from_function_response(
-                                name="browser",
-                                response={"result": f"USE_CITATION=YES\nONLINE_RESULTS={wsearch_result}"}
-                            )
-                            chat_contents.append(types.Content(
-                                role="model",
-                                parts=[types.Part(function_call=fn)]
-                            ))
-                            chat_contents.append(types.Content(
-                                role="user",
-                                parts=[function_response_part]
-                            ))
-                            function_call_handled = True
-                            break
-
-                        # IMAGE GENERATION FUNCTION CALL
-                        elif fn.name == "imagine":
-                            prompt = fn.args.get('prompt', '')
-                            ar = fn.args.get('ar', '1:1')
-                            await bot_message.edit(content="-# Generating Image... <a:gemini_sparkles:1321895555676504077>")
-                            imagine_result = await imagine(prompt, ar)
-                            if imagine_result["is_error"] == 1:
-                                await bot_message.edit(content='-# An Error Occurred <:error_icon:1295348741058068631>')
-                                function_response_part = types.Part.from_function_response(
-                                    name="imagine",
-                                    response={"result": f"IMAGE_GENERATED=NO\nERROR_MSG=Error occurred on image model: {imagine_result['img_error_msg']}"}
-                                )
+                # Update messages with each chunk
+                for i in range(len(new_chunks)):
+                    try:
+                        if i < len(message_chunks):
+                            if message_chunks[i]:
+                                await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                        else:
+                            if i == 0 and bot_message:
+                                await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                message_chunks.append(bot_message)
                             else:
-                                await bot_message.edit(content="-# Done <:checkmark:1220809843414270102>")
-                                await message.reply(file=discord.File(imagine_result["filename"]))
-                                os.remove(imagine_result["filename"])
-                                function_response_part = types.Part.from_function_response(
-                                    name="imagine",
-                                    response={"result": "IMAGE_GENERATED=YES"}
-                                )
-                            chat_contents.append(types.Content(
-                                role="model",
-                                parts=[types.Part(function_call=fn)]
-                            ))
-                            chat_contents.append(types.Content(
-                                role="user",
-                                parts=[function_response_part]
-                            ))
-                            function_call_handled = True
-                            break
+                                new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                message_chunks.append(new_msg)
+                    except Exception as e:
+                        print(f"Error updating message {i}: {e}")
+                        continue
 
-                    elif hasattr(chunk, 'text') and chunk.text:
-                        # Only process text if there was no function_call
-                        await process_response_text([chunk], message, bot_message, message_chunks)
+                # Finalize messages by removing the animation icon
+                for i in range(len(message_chunks)):
+                    try:
+                        if i < len(new_chunks) and message_chunks[i]:
+                            await message_chunks[i].edit(content=new_chunks[i])
+                    except Exception as e:
+                        print(f"Error finalizing message {i}: {e}")
+                return new_chunks
             except Exception as e:
-                logger.error(f"Error processing chunk: {e}")
+                print(f"Error in process_response_text: {e}")
+                return None
+        # Process Gemini response
+        for chunk in response:
+            try:
+                if chunk.function_calls:
+                    fn = chunk.function_calls[0]
+                    # PYTHON
+                    if fn.name == "python":
+                        code_text = fn.args.get('code_text', '')
+                        await bot_message.edit(content=f"-# Executing... <a:brackets:1300121114869235752>")
+                        python_result = exec_python(code_text)
+                        await bot_message.edit(content=f"-# Done <a:brackets:1300121114869235752>")
+                        cleaned_result = clean_result(python_result)
+                        function_response_part = types.Part.from_function_response(
+                            name="python",
+                            response={"result": cleaned_result}
+                        )
+                        chat_contents.append(types.Content(
+                            role="model",
+                            parts=[types.Part(function_call=fn)]
+                        ))
+                        chat_contents.append(types.Content(
+                            role="user",
+                            parts=[function_response_part]
+                        ))
+                        response = client.models.generate_content(
+                            model=model_id,
+                            contents=chat_contents,
+                            config=config
+                        )
+                        post_function_call = True
+                        await process_response_text(response, message, bot_message, message_chunks)
+                    # WEB SEARCH
+                    elif fn.name == "browser":
+                        q = fn.args.get('q', '')
+                        num = fn.args.get('num', 15)
+                        await bot_message.edit(content=f'-# Searching \'{q}\' <a:searchingweb:1246248294322147489>')
+                        wsearch_result = await browser(q, num)
+                        await bot_message.edit(content='-# Reading results... <a:searchingweb:1246248294322147489>')
+                        function_response_part = types.Part.from_function_response(
+                            name="browser",
+                            response={"result": f"USE_CITATION=YES\nONLINE_RESULTS={wsearch_result}"}
+                        )
+                        chat_contents.append(types.Content(
+                            role="model",
+                            parts=[types.Part(function_call=fn)]
+                        ))
+                        chat_contents.append(types.Content(
+                            role="user",
+                            parts=[function_response_part]
+                        ))
+                        response = client.models.generate_content(
+                            model=model_id,
+                            contents=chat_contents,
+                            config=config
+                        )
+                        post_function_call = True
+                        await process_response_text(response, message, bot_message, message_chunks)
+                    # IMAGINE
+                    elif fn.name == "imagine":
+                        prompt = fn.args.get('prompt', '')
+                        ar = fn.args.get('ar', '1:1')
+                        await bot_message.edit(content="-# Generating Image... <a:gemini_sparkles:1321895555676504077>")
+                        imagine_result = await imagine(prompt, ar)
+                        if imagine_result["is_error"] == 1:
+                            await bot_message.edit(content='-# An Error Occurred <:error_icon:1295348741058068631>')
+                            function_response_part = types.Part.from_function_response(
+                                name="imagine",
+                                response={"result": f"IMAGE_GENERATED=NO\nERROR_MSG=Error occurred on image model: {imagine_result['img_error_msg']}"}
+                            )
+                        else:
+                            await bot_message.edit(content="-# Done <:checkmark:1220809843414270102>")
+                            await message.reply(file=discord.File(imagine_result["filename"]))
+                            os.remove(imagine_result["filename"])
+                            function_response_part = types.Part.from_function_response(
+                                name="imagine",
+                                response={"result": "IMAGE_GENERATED=YES"}
+                            )
+                        chat_contents.append(types.Content(
+                            role="model",
+                            parts=[types.Part(function_call=fn)]
+                        ))
+                        chat_contents.append(types.Content(
+                            role="user",
+                            parts=[function_response_part]
+                        ))
+                        response = client.models.generate_content(
+                            model=model_id,
+                            contents=chat_contents,
+                            config=config
+                        )
+                        post_function_call = True
+                        await process_response_text(response, message, bot_message, message_chunks)
+                elif chunk.text:
+                    full_response += chunk.text
+                    new_chunks = split_msg(full_response)
+                    new_chunks[0] = new_chunks[0].replace("Gemini:", "", 1)
+                    new_chunks[0] = new_chunks[0].replace("Language Model#3241:", "", 1)
+                    
+                    new_chunks = ["‎ " if chunk == "\n" else chunk for chunk in new_chunks]
+                    for i in range(len(new_chunks)):
+                        if i < len(message_chunks):
+                            await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                        else:
+                            if i == 0:
+                                await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                message_chunks.append(bot_message)
+                            else:
+                                new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                message_chunks.append(new_msg)
+            except Exception as e:
+                print(f"Error processing chunk: {e}")
                 continue
-
-            if not function_call_handled:
-                # No more function calls—exit loop after finishing text
-                break
         # Finalize all chunks by removing the animation
         if message_chunks:
             for i, msg in enumerate(message_chunks):
                 try:
                     await msg.edit(content=new_chunks[i])
                 except Exception as e:
-                    logger.error(f"Error finalizing message {i}: {e}")
+                    print(f"Error finalizing message {i}: {e}")
     except Exception as e:
         logger.error("An error occurred:\n" + traceback.format_exc())
         print(f'Error handling message: {e}')
