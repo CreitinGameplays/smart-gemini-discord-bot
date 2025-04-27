@@ -90,13 +90,12 @@ Examples:
     3. "Are there any delays at JFK Airport today?"
     4. "What are the top trending topics on Twitter right now?"
     5. "What's the latest Windows version?"
-    You: (calls the browser function with the query in `default_api`)
+    You: (calls the browser function with the query in `default_api`. Default `browser` function call number is 1)
 1. Always perform a search online if you are unsure about a user question.
 2. Remember that today's date is TODAYTIME00. Always keep this date in mind to provide time-relevant context in your search query. Only provide the month (name) and year in search query.
 3. Search query must be as detailed as possible. Optimize the query.
 4. Also search online when user sends an audio message asking something you don't know.
 1. If you don't know the answer, search online.
-2. DO NOT ask permission to search online, just do it!
 When using `browser` tool in your responses, you MUST USE CITATION, in hyperlink format. Ensure you provide a citation for each paragraph that uses information from a web search.
 Citation Usage Example:
 - User: "What is the capital of France?"
@@ -141,9 +140,9 @@ tool_websearch = types.Tool(function_declarations=[
             "type": "object",
             "properties": {
                 "q": {"type": "string", "description": "The optimized search query"},
-                "num": {"type": "integer", "description": "The number of results (min 15, max 30)"}
+                "num": {"type": "integer", "description": "The number of results (min 5, max 30)"}
             },
-            "required": ["q", "num"]
+            "required": ["q"]
         }
     }
 ])
@@ -512,11 +511,11 @@ async def handle_message(message):
 
         tool_config = types.ToolConfig(
             function_calling_config=types.FunctionCallingConfig(
-                mode="ANY", allowed_function_names=["browser"]
+                mode="ANY", allowed_function_names=["browser", "python"]
             )
         )
         config = types.GenerateContentConfig(
-            temperature=0.3,
+            temperature=0.1,
             top_p=0.95,
             top_k=40,
             max_output_tokens=8192,
@@ -696,7 +695,7 @@ async def handle_message(message):
                         # WEB SEARCH FUNCTION CALL
                         elif fn.name == "browser":
                             q = fn.args.get('q', '')
-                            num = fn.args.get('num', 15)
+                            num = fn.args.get('num', 5)
                             await bot_message.edit(content=f'-# Searching \'{q}\' <a:searchingweb:1246248294322147489>')
                             wsearch_result = await browser(q, num)
                             await bot_message.edit(content='-# Reading results... <a:searchingweb:1246248294322147489>')
