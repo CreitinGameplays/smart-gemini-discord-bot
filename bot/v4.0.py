@@ -646,7 +646,6 @@ async def handle_message(message):
         # Process Gemini response
         for chunk in response:
             try:
-                import json
                 response_iter = iter(response)
                 while True:
                     try:
