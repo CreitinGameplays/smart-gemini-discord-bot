@@ -63,7 +63,7 @@ gcp_project = os.getenv('GCP_PROJECT')
 SEARCH_SNIPPET_SIZE = 6000
 MAX_CHAT_HISTORY_MESSAGES = 20
 # gemini-2.5-flash-preview-04-17
-model_id = "gemini-2.0-flash"
+model_id = "gemini-2.5-flash-preview-04-17"
 image_model_id = "imagen-3.0-fast-generate-001"
 
 # SYSTEM PROMPT
@@ -517,7 +517,7 @@ async def handle_message(message):
         )
         config = types.GenerateContentConfig(
             temperature=0.6,
-            top_p=1.0,
+            top_p=0.95,
             top_k=50,
             max_output_tokens=8192,
             response_mime_type="text/plain",
