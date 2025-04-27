@@ -174,7 +174,7 @@ tool_python = types.Tool(function_declarations=[
     }
 ])
 
-def safe_stream(async_iter):
+async def safe_stream(async_iter):
     it = async_iter.__aiter__()
     while True:
         try:
@@ -657,7 +657,7 @@ async def handle_message(message):
                 print(f"Error in process_response_text: {e}")
                 return None
         # Process Gemini response
-        for chunk in safe_stream(response):
+        async for chunk in safe_stream(response):
             try:
                 if chunk.function_calls:
                     post_function_call = True
