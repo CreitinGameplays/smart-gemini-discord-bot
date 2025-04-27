@@ -631,6 +631,7 @@ async def handle_message(message):
         for chunk in response:
             try:
                 if chunk.function_calls:
+                    post_function_call = True
                     fn = chunk.function_calls[0]
                     # PYTHON
                     if fn.name == "python":
@@ -726,7 +727,7 @@ async def handle_message(message):
                     
                     new_chunks = ["‎ " if chunk == "\n" else chunk for chunk in new_chunks]
                     for i in range(len(new_chunks)):
-                        if post_function_call:
+                        if post_function_call == True:
                             # Always send a new message after a function call
                             new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
                             message_chunks.append(new_msg)
