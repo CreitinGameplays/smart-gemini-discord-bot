@@ -536,7 +536,7 @@ async def handle_message(message):
                     parts=[types.Part.from_text(text=f"{m.author}: {m.content}")]
                 )
             )
-        # Attachments
+        # Attachments upload helper
         async def upload_to_gemini(path, mime_type=None, cache={}):
             retries = 5
             if path in cache:
@@ -551,8 +551,21 @@ async def handle_message(message):
                         await asyncio.sleep(2 ** attempt)
                     else:
                         raise Exception(f"Failed to upload file after {retries} attempts: {str(e)}")
-        if os.path.exists(file_path1):
+
+        if message.attachments:
+            for attachment in message.attachments:
+                if attachment.content_type and attachment.content_type.startswith('image'):
+                    # Save and upload the new image
+                    img_data = await attachment.read()
+                    img = Image.open(io.BytesIO(img_data))
+                    os.makedirs(attachment_folder, exist_ok=True)
+                    img.save(file_path1, format='PNG')
+                    files = await upload_to_gemini(file_path1, mime_type='image/png')
+                    break  # Only handle the first image attachment
+        elif os.path.exists(file_path1):
+            # No new attachment, but cached file exists
             files = await upload_to_gemini(file_path1, mime_type='image/png')
+
         if os.path.exists(file_path2):
             files2 = await upload_to_gemini(file_path2, mime_type='audio/ogg')
         if os.path.exists(file_path3):
