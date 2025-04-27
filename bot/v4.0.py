@@ -174,7 +174,7 @@ tool_python = types.Tool(function_declarations=[
     }
 ])
 
-async def safe_stream(async_iter):
+def safe_stream(async_iter):
     it = async_iter.__aiter__()
     while True:
         try:
