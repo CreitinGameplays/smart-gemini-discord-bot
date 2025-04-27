@@ -42,11 +42,15 @@ credentials = service_account.Credentials.from_service_account_info(credentials_
 handler = RotatingFileHandler(
     filename='bot_errors.log', mode='a', maxBytes=80 * 1024, backupCount=1, encoding='utf-8',
 )
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler = logging.StreamHandler()  # Console output
+
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(name)s - %(message)s')
 handler.setFormatter(formatter)
+console_handler.setFormatter(formatter)
 logger = logging.getLogger()
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)  # Log everything
 logger.addHandler(handler)
+logger.addHandler(console_handler)
 
 # ENV
 bot_token = os.getenv('TOKEN')
