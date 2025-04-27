@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 import aiohttp
 import datetime
 import json
+from json.decoder import JSONDecodeError
 import re
 import shutil
 import time
@@ -173,6 +174,18 @@ tool_python = types.Tool(function_declarations=[
     }
 ])
 
+async def safe_stream(async_iter):
+    it = async_iter.__aiter__()
+    while True:
+        try:
+            chunk = await it.__anext__()
+        except StopAsyncIteration:
+            break
+        except JSONDecodeError:
+            # just skip this malformed fragment
+            continue
+        yield chunk
+        
 # Split message function (unchanged)
 def split_msg(string, chunk_size=1500):
     chunks = []
@@ -644,7 +657,7 @@ async def handle_message(message):
                 print(f"Error in process_response_text: {e}")
                 return None
         # Process Gemini response
-        for chunk in response:
+        for chunk in safe_stream(response):
             try:
                 if chunk.function_calls:
                     post_function_call = True
