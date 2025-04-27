@@ -745,21 +745,15 @@ async def handle_message(message):
                     
                     new_chunks = ["‎ " if chunk == "\n" else chunk for chunk in new_chunks]
                     for i in range(len(new_chunks)):
-                        if post_function_call:
-                            # Always send a new message after a function call
-                            new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
-                            message_chunks.append(new_msg)
-                            post_function_call = False  # Only for the first chunk after function call
+                        if i < len(message_chunks):
+                            await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
                         else:
-                            if i < len(message_chunks):
-                                await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                            if i == 0:
+                                await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                message_chunks.append(bot_message)
                             else:
-                                if i == 0:
-                                    await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
-                                    message_chunks.append(bot_message)
-                                else:
-                                    new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
-                                    message_chunks.append(new_msg)
+                                new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                message_chunks.append(new_msg)
             except Exception as e:
                 print(f"Error processing chunk: {e}")
                 continue
