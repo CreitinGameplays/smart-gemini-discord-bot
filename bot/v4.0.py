@@ -512,7 +512,7 @@ async def handle_message(message):
 
         tool_config = types.ToolConfig(
             function_calling_config=types.FunctionCallingConfig(
-                mode="ANY", allowed_function_names=["browser", "python"]
+                mode="AUTO"
             )
         )
         config = types.GenerateContentConfig(
@@ -522,7 +522,7 @@ async def handle_message(message):
             max_output_tokens=8192,
             response_mime_type="text/plain",
             tools=[tool_python, tool_websearch, tool_imagine],
-            #tool_config=tool_config,
+            tool_config=tool_config,
             system_instruction=[
                 types.Part.from_text(text=base_system_prompt.replace("TODAYTIME00", todayday2))
             ]
