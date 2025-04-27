@@ -173,15 +173,6 @@ tool_python = types.Tool(function_declarations=[
         }
     }
 ])
-
-async def safe_stream(async_iter):
-    async for chunk in async_iter:
-        try:
-            # simulate the SDK’s json.loads() step
-            json.loads(chunk.raw_text)
-        except JSONDecodeError:
-            continue
-        yield chunk
         
 # Split message function (unchanged)
 def split_msg(string, chunk_size=1500):
@@ -608,7 +599,7 @@ async def handle_message(message):
             parts=[types.Part.from_text(text=user_message)]
         ))
         # Generate content with Gemini
-        response = await client.models.generate_content_stream(
+        response = client.models.generate_content_stream(
             model=model_id,
             contents=chat_contents,
             config=config
@@ -654,7 +645,7 @@ async def handle_message(message):
                 print(f"Error in process_response_text: {e}")
                 return None
         # Process Gemini response
-        async for chunk in safe_stream(response):
+        for chunk in response:
             try:
                 if chunk.function_calls:
                     post_function_call = True
