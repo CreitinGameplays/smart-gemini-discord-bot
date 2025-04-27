@@ -548,9 +548,7 @@ async def handle_message(message):
                     parts=[types.Part.from_text(text=f"{m.author}: {m.content}")]
                 )
             )
-
-        # --- Begin NEW attachment history logic ---
-        # 1. Scan chat history for attachments and update attachment_histories
+        # Add chat history attachments
         supported_text_exts = ('.txt', '.md', '.py', '.json', '.js', '.html', '.css', '.csv', '.yaml', '.yml', '.xml', '.c', '.cpp', '.java', '.ts', '.sh', '.bat', '.ini', '.conf', '.toml', '.log')
         for m in channel_history:
             if m.attachments:
