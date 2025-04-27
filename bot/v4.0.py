@@ -646,6 +646,16 @@ async def handle_message(message):
         # Process Gemini response
         for chunk in response:
             try:
+                import json
+                response_iter = iter(response)
+                while True:
+                    try:
+                        chunk = next(response_iter)
+                    except json.JSONDecodeError as e:
+                        logger.warning(f"Skipping invalid JSON chunk: {e}")
+                        continue
+                    except StopIteration:
+                        break
                 if chunk.function_calls:
                     post_function_call = True
                     fn = chunk.function_calls[0]
