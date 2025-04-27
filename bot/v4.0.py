@@ -551,25 +551,50 @@ async def handle_message(message):
                         await asyncio.sleep(2 ** attempt)
                     else:
                         raise Exception(f"Failed to upload file after {retries} attempts: {str(e)}")
+        # --- Begin improved section for ALL attachments: image, audio, text/code ---
+        supported_text_exts = ('.txt', '.md', '.py', '.json', '.js', '.html', '.css', '.csv', '.yaml', '.yml', '.xml', '.c', '.cpp', '.java', '.ts', '.sh', '.bat', '.ini', '.conf', '.toml', '.log')
+        text_attachment_found = False
+        image_attachment_found = False
+        audio_attachment_found = False
 
         if message.attachments:
             for attachment in message.attachments:
-                if attachment.content_type and attachment.content_type.startswith('image'):
-                    # Save and upload the new image
+                # IMAGE
+                if not image_attachment_found and attachment.content_type and attachment.content_type.startswith('image'):
                     img_data = await attachment.read()
                     img = Image.open(io.BytesIO(img_data))
                     os.makedirs(attachment_folder, exist_ok=True)
                     img.save(file_path1, format='PNG')
                     files = await upload_to_gemini(file_path1, mime_type='image/png')
-                    break  # Only handle the first image attachment
-        elif os.path.exists(file_path1):
-            # No new attachment, but cached file exists
-            files = await upload_to_gemini(file_path1, mime_type='image/png')
-
-        if os.path.exists(file_path2):
-            files2 = await upload_to_gemini(file_path2, mime_type='audio/ogg')
-        if os.path.exists(file_path3):
-            files3 = await upload_to_gemini(file_path3, mime_type='text/plain')
+                    image_attachment_found = True
+                # AUDIO
+                elif not audio_attachment_found and attachment.content_type and attachment.content_type.startswith('audio'):
+                    audio_data = await attachment.read()
+                    os.makedirs(attachment_folder, exist_ok=True)
+                    async with aiofiles.open(file_path2, 'wb') as f:
+                        await f.write(audio_data)
+                    files2 = await upload_to_gemini(file_path2, mime_type='audio/ogg')
+                    audio_attachment_found = True
+                # TEXT/CODE (by content_type or file extension)
+                elif not text_attachment_found and (
+                    (attachment.content_type and attachment.content_type.startswith('text')) or
+                    any(attachment.filename.endswith(ext) for ext in supported_text_exts)
+                ):
+                    text_data = await attachment.read()
+                    os.makedirs(attachment_folder, exist_ok=True)
+                    # Always save as TXT for Gemini
+                    async with aiofiles.open(file_path3, 'wb') as f:
+                        await f.write(text_data)
+                    files3 = await upload_to_gemini(file_path3, mime_type='text/plain')
+                    text_attachment_found = True
+        else:
+            # No new attachments, use cached files if they exist
+            if os.path.exists(file_path1):
+                files = await upload_to_gemini(file_path1, mime_type='image/png')
+            if os.path.exists(file_path2):
+                files2 = await upload_to_gemini(file_path2, mime_type='audio/ogg')
+            if os.path.exists(file_path3):
+                files3 = await upload_to_gemini(file_path3, mime_type='text/plain')
         # Add files to chat_contents if present
         if files:
             chat_contents.append(types.Content(
