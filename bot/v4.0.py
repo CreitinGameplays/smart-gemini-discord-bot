@@ -756,7 +756,6 @@ async def handle_message(message):
             if not function_call_handled:
                 # No more function calls—exit loop after finishing text
                 break
-
         # Finalize all chunks by removing the animation
         if message_chunks:
             for i, msg in enumerate(message_chunks):
