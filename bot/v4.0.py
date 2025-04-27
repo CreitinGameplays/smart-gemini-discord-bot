@@ -686,10 +686,8 @@ async def handle_message(message):
                         await process_response_text(response, message, bot_message, message_chunks)
                     # WEB SEARCH
                     elif fn.name == "browser":
-                        q = fn.args.get('q', '')
-                        num = fn.args.get('num', 15)
                         await bot_message.edit(content=f'-# Searching \'{q}\' <a:searchingweb:1246248294322147489>')
-                        wsearch_result = await browser(q, num)
+                        wsearch_result = await browser(fn.args['q'], fn.args.get('num',15))
                         await bot_message.edit(content='-# Reading results... <a:searchingweb:1246248294322147489>')
                         function_response_part = types.Part.from_function_response(
                             name="browser",
@@ -703,7 +701,7 @@ async def handle_message(message):
                             role="user",
                             parts=[function_response_part]
                         ))
-                        response = client.models.generate_content(
+                        response = client.models.generate_content_stream(
                             model=model_id,
                             contents=chat_contents,
                             config=config
