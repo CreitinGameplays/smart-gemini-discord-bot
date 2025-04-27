@@ -175,14 +175,11 @@ tool_python = types.Tool(function_declarations=[
 ])
 
 async def safe_stream(async_iter):
-    it = async_iter.__aiter__()
-    while True:
+    async for chunk in async_iter:
         try:
-            chunk = await it.__anext__()
-        except StopAsyncIteration:
-            break
+            # simulate the SDK’s json.loads() step
+            json.loads(chunk.raw_text)
         except JSONDecodeError:
-            # just skip this malformed fragment
             continue
         yield chunk
         
@@ -611,7 +608,7 @@ async def handle_message(message):
             parts=[types.Part.from_text(text=user_message)]
         ))
         # Generate content with Gemini
-        response = client.models.generate_content_stream(
+        response = await client.models.generate_content_stream(
             model=model_id,
             contents=chat_contents,
             config=config
