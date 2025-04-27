@@ -374,6 +374,18 @@ def extract_youtube_url(text):
 async def restart_bot():
     os.execv(sys.executable, ['python'] + sys.argv)
 
+# Clean result function
+def clean_result(result):
+    if isinstance(result, str):
+        try:
+            # Try to parse Python dict string to real dict
+            result_dict = ast.literal_eval(result)
+            if isinstance(result_dict, dict):
+                return result_dict
+        except Exception:
+            pass
+    return result
+
 # Discord events and message handler
 @bot.event
 async def on_ready():
@@ -643,9 +655,10 @@ async def handle_message(message):
                         await bot_message.edit(content=f"-# Executing... <a:brackets:1300121114869235752>")
                         python_result = exec_python(code_text)
                         await bot_message.edit(content=f"-# Done <a:brackets:1300121114869235752>")
+                        cleaned_result = clean_result(python_result)
                         function_response_part = types.Part.from_function_response(
                             name="python",
-                            response={"result": str(python_result)}
+                            response={"result": cleaned_result}
                         )
                         chat_contents.append(types.Content(
                             role="model",
