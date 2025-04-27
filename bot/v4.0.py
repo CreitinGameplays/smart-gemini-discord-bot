@@ -173,7 +173,17 @@ tool_python = types.Tool(function_declarations=[
         }
     }
 ])
-        
+
+def safe_stream(sse_response):
+    for raw_chunk in sse_response:
+        try:
+            # Only pass on valid JSON objects
+            json.loads(raw_chunk)
+            yield raw_chunk
+        except json.JSONDecodeError:
+            # Skip any SSE control lines or empty chunks
+            continue
+
 # Split message function (unchanged)
 def split_msg(string, chunk_size=1500):
     chunks = []
@@ -645,7 +655,7 @@ async def handle_message(message):
                 print(f"Error in process_response_text: {e}")
                 return None
         # Process Gemini response
-        for chunk in response:
+        for chunk in safe_stream(response):
             try:
                 if chunk.function_calls:
                     post_function_call = True
