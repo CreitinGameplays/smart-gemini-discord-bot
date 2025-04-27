@@ -512,7 +512,7 @@ async def handle_message(message):
 
         tool_config = types.ToolConfig(
             function_calling_config=types.FunctionCallingConfig(
-                mode="ANY", allowed_function_names=["browser", "python"]
+                mode="AUTO", allowed_function_names=["browser", "python"]
             )
         )
         config = types.GenerateContentConfig(
