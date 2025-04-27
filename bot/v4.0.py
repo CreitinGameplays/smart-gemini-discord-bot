@@ -609,6 +609,7 @@ async def handle_message(message):
         message_chunks = []
         post_function_call = False
         async def process_response_text(response, message, bot_message, message_chunks):
+            nonlocal full_response
             try:
                 if response and hasattr(response, 'text') and response.text:
                     full_response += response.text
