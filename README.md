@@ -13,9 +13,9 @@ This is a Discord bot built using the [py-cord](https://github.com/Pycord-Develo
   
 ## Requirements
 - Your bot token (Get it on Discord Developers Portal)
-- Groq API key (it's free)
+- ~~Groq API key (it's free)~~ v3.5 and up doesn't need this
 - Google AI Studio API key (it's also free)
-- HuggingFace token (free)
+- ~~HuggingFace token (free)~~ v3.5 and up doesn't need this
 - A functional human brain (expensive)
 
 `v3.5` and above:
