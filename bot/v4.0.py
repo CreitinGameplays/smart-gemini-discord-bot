@@ -512,13 +512,32 @@ async def handle_message(message):
         os.makedirs(attachment_folder, exist_ok=True)
         client = Client(api_key=ai_key)
 
+        # --- AUDIO MIME AND EXTENSION SUPPORT ---
+        AUDIO_MIME_MAP = {
+            '.ogg':  'audio/ogg',
+            '.mp3':  'audio/mpeg',
+            '.wav':  'audio/wav',
+            '.m4a':  'audio/mp4',  # or audio/x-m4a
+            '.flac': 'audio/flac',
+            '.aac':  'audio/aac',
+            '.opus': 'audio/opus',
+            '.webm': 'audio/webm',
+        }
+        SUPPORTED_AUDIO_EXTS = tuple(AUDIO_MIME_MAP.keys())
+
         def classify_attachment(attachment):
-            supported_text_exts = ('.txt', '.md', '.py', '.json', '.js', '.html', '.css', '.csv', '.yaml', '.yml', '.xml', '.c', '.cpp', '.java', '.ts', '.sh', '.bat', '.ini', '.conf', '.toml', '.log')
+            supported_text_exts = (
+                '.txt', '.md', '.py', '.json', '.js', '.html', '.css', '.csv', '.yaml', '.yml', '.xml',
+                '.c', '.cpp', '.java', '.ts', '.sh', '.bat', '.ini', '.conf', '.toml', '.log'
+            )
+            filename = attachment.filename.lower()
             if attachment.content_type and attachment.content_type.startswith('image'):
                 return 'image'
             if attachment.content_type and attachment.content_type.startswith('audio'):
                 return 'audio'
-            if (attachment.content_type and attachment.content_type.startswith('text')) or any(attachment.filename.endswith(ext) for ext in supported_text_exts):
+            if filename.endswith(SUPPORTED_AUDIO_EXTS):
+                return 'audio'
+            if (attachment.content_type and attachment.content_type.startswith('text')) or any(filename.endswith(ext) for ext in supported_text_exts):
                 return 'text'
             return None
 
@@ -549,7 +568,10 @@ async def handle_message(message):
                 )
             )
         # Add chat history attachments
-        supported_text_exts = ('.txt', '.md', '.py', '.json', '.js', '.html', '.css', '.csv', '.yaml', '.yml', '.xml', '.c', '.cpp', '.java', '.ts', '.sh', '.bat', '.ini', '.conf', '.toml', '.log')
+        supported_text_exts = (
+            '.txt', '.md', '.py', '.json', '.js', '.html', '.css', '.csv', '.yaml', '.yml', '.xml',
+            '.c', '.cpp', '.java', '.ts', '.sh', '.bat', '.ini', '.conf', '.toml', '.log'
+        )
         for m in channel_history:
             if m.attachments:
                 for attachment in m.attachments:
@@ -563,6 +585,11 @@ async def handle_message(message):
                             if atype == 'text':
                                 base, _ = os.path.splitext(fname)
                                 fpath = os.path.join(attachment_folder, base + ".txt")
+                            # For audio, use correct extension
+                            elif atype == 'audio':
+                                base, ext = os.path.splitext(fname)
+                                ext = ext if ext in AUDIO_MIME_MAP else '.ogg'
+                                fpath = os.path.join(attachment_folder, base + ext)
                             async with aiofiles.open(fpath, 'wb') as f:
                                 await f.write(data)
                         if fpath not in attachment_histories[channel_id][atype]:
@@ -579,6 +606,11 @@ async def handle_message(message):
                     if atype == 'text':
                         base, _ = os.path.splitext(fname)
                         fpath = os.path.join(attachment_folder, base + ".txt")
+                    # For audio, use correct extension
+                    elif atype == 'audio':
+                        base, ext = os.path.splitext(fname)
+                        ext = ext if ext in AUDIO_MIME_MAP else '.ogg'
+                        fpath = os.path.join(attachment_folder, base + ext)
                     async with aiofiles.open(fpath, 'wb') as f:
                         await f.write(data)
                     if fpath not in attachment_histories[channel_id][atype]:
@@ -588,10 +620,9 @@ async def handle_message(message):
         for atype in ['image', 'audio', 'text']:
             valid_files = set(attachment_histories[channel_id][atype])
             for fname in os.listdir(attachment_folder):
-                # Remove files that are too old and not in the last 10 for this channel/type
                 ext_ok = (
                     (fname.endswith(('.png', '.jpg', '.jpeg')) and atype == 'image') or
-                    (fname.endswith('.ogg') and atype == 'audio') or
+                    (any(fname.endswith(ext) for ext in SUPPORTED_AUDIO_EXTS) and atype == 'audio') or
                     (fname.endswith('.txt') and atype == 'text')
                 )
                 if ext_ok:
@@ -619,13 +650,19 @@ async def handle_message(message):
                         raise Exception(f"Failed to upload file after {retries} attempts: {str(e)}")
 
         # 5. Add the most recent attachments (up to 3 per type) to chat_contents
-        for atype, mime, instr in [
+        for atype, default_mime, instr in [
             ('image', 'image/png', '[Instructions: This is an image. Use as context.]'),
-            ('audio', 'audio/ogg', '[Instructions: This is an audio file. Use as context.]'),
+            ('audio', None, '[Instructions: This is an audio file. Use as context.]'),
             ('text', 'text/plain', '[Instructions: This is a text file. Use as context.]')
         ]:
             for fpath in list(attachment_histories[channel_id][atype])[-3:]:
                 if os.path.exists(fpath):
+                    # Set correct audio MIME type
+                    if atype == 'audio':
+                        ext = os.path.splitext(fpath)[1].lower()
+                        mime = AUDIO_MIME_MAP.get(ext, 'audio/ogg')
+                    else:
+                        mime = default_mime
                     uploaded = await upload_to_gemini(fpath, mime_type=mime)
                     chat_contents.append(types.Content(
                         role="user",
