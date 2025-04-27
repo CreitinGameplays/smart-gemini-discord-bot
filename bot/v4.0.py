@@ -509,6 +509,12 @@ async def handle_message(message):
         file_path3 = os.path.join(attachment_folder, f'user_attachment_{channel_id}.txt')
         files, files2, files3 = None, None, None
         client = Client(api_key=ai_key)
+
+        tool_config = types.ToolConfig(
+            function_calling_config=types.FunctionCallingConfig(
+                mode="ANY", allowed_function_names=["browser", "python"]
+            )
+        )
         config = types.GenerateContentConfig(
             temperature=0.6,
             top_p=1.0,
@@ -516,6 +522,7 @@ async def handle_message(message):
             max_output_tokens=8192,
             response_mime_type="text/plain",
             tools=[tool_python, tool_websearch, tool_imagine],
+            tool_config=tool_config,
             system_instruction=[
                 types.Part.from_text(text=base_system_prompt.replace("TODAYTIME00", todayday2))
             ]
