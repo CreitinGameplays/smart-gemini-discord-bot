@@ -66,6 +66,13 @@ MAX_CHAT_HISTORY_MESSAGES = 24
 model_id = "gemini-2.5-flash-preview-04-17"
 image_model_id = "imagen-3.0-fast-generate-001"
 
+# Maintain last 10 attachments per type and per channel
+attachment_histories = defaultdict(lambda: {
+    "image": deque(maxlen=10),
+    "audio": deque(maxlen=10),
+    "text": deque(maxlen=10)
+})
+
 # SYSTEM PROMPT
 base_system_prompt = f"""
 You are a Web AI assistant named Gemini, trained by Google. You were designed to provide accurate and real-time information to the user, by using your `browser` tool. Your primary feature is the ability to search the internet and retrieve relevant, high-quality, and recent information to answer user queries.
@@ -357,8 +364,6 @@ def extract_youtube_url(text):
     if not text:
         return None
 
-    # Regex should capture an 11-character video ID from common YouTube URL formats,
-    # regardless of extra query parameters (like ?si=...)
     youtube_regex = (
         r'(?i)(?:https?:\/\/)?(?:www\.)?(?:'
         r'youtube\.com\/(?:(?:watch\?(?:.*&)?v=)|(?:embed\/)|(?:v\/))|'
@@ -504,11 +509,18 @@ async def handle_message(message):
         user_message = message.content.replace(f'<@{bot.user.id}>', '').strip()
         # Attachments
         attachment_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'attachments')
-        file_path1 = os.path.join(attachment_folder, f'user_attachment_{channel_id}.png')
-        file_path2 = os.path.join(attachment_folder, f'user_attachment_{channel_id}.ogg')
-        file_path3 = os.path.join(attachment_folder, f'user_attachment_{channel_id}.txt')
-        files, files2, files3 = None, None, None
+        os.makedirs(attachment_folder, exist_ok=True)
         client = Client(api_key=ai_key)
+
+        def classify_attachment(attachment):
+            supported_text_exts = ('.txt', '.md', '.py', '.json', '.js', '.html', '.css', '.csv', '.yaml', '.yml', '.xml', '.c', '.cpp', '.java', '.ts', '.sh', '.bat', '.ini', '.conf', '.toml', '.log')
+            if attachment.content_type and attachment.content_type.startswith('image'):
+                return 'image'
+            if attachment.content_type and attachment.content_type.startswith('audio'):
+                return 'audio'
+            if (attachment.content_type and attachment.content_type.startswith('text')) or any(attachment.filename.endswith(ext) for ext in supported_text_exts):
+                return 'text'
+            return None
 
         tool_config = types.ToolConfig(
             function_calling_config=types.FunctionCallingConfig(
@@ -536,7 +548,63 @@ async def handle_message(message):
                     parts=[types.Part.from_text(text=f"{m.author}: {m.content}")]
                 )
             )
-        # Attachments upload helper
+
+        # --- Begin NEW attachment history logic ---
+        # 1. Scan chat history for attachments and update attachment_histories
+        supported_text_exts = ('.txt', '.md', '.py', '.json', '.js', '.html', '.css', '.csv', '.yaml', '.yml', '.xml', '.c', '.cpp', '.java', '.ts', '.sh', '.bat', '.ini', '.conf', '.toml', '.log')
+        for m in channel_history:
+            if m.attachments:
+                for attachment in m.attachments:
+                    atype = classify_attachment(attachment)
+                    if atype:
+                        fname = f"{m.id}_{attachment.filename}"
+                        fpath = os.path.join(attachment_folder, fname)
+                        if not os.path.exists(fpath):
+                            data = await attachment.read()
+                            # For text/code, always save as .txt
+                            if atype == 'text':
+                                base, _ = os.path.splitext(fname)
+                                fpath = os.path.join(attachment_folder, base + ".txt")
+                            async with aiofiles.open(fpath, 'wb') as f:
+                                await f.write(data)
+                        if fpath not in attachment_histories[channel_id][atype]:
+                            attachment_histories[channel_id][atype].append(fpath)
+        # 2. Handle new attachments in the current message (take priority if present)
+        if message.attachments:
+            for attachment in message.attachments:
+                atype = classify_attachment(attachment)
+                if atype:
+                    fname = f"{message.id}_{attachment.filename}"
+                    fpath = os.path.join(attachment_folder, fname)
+                    data = await attachment.read()
+                    # For text/code, always save as .txt
+                    if atype == 'text':
+                        base, _ = os.path.splitext(fname)
+                        fpath = os.path.join(attachment_folder, base + ".txt")
+                    async with aiofiles.open(fpath, 'wb') as f:
+                        await f.write(data)
+                    if fpath not in attachment_histories[channel_id][atype]:
+                        attachment_histories[channel_id][atype].append(fpath)
+
+        # 3. Remove files older than the last 10 for each type
+        for atype in ['image', 'audio', 'text']:
+            valid_files = set(attachment_histories[channel_id][atype])
+            for fname in os.listdir(attachment_folder):
+                # Remove files that are too old and not in the last 10 for this channel/type
+                ext_ok = (
+                    (fname.endswith(('.png', '.jpg', '.jpeg')) and atype == 'image') or
+                    (fname.endswith('.ogg') and atype == 'audio') or
+                    (fname.endswith('.txt') and atype == 'text')
+                )
+                if ext_ok:
+                    fpath = os.path.join(attachment_folder, fname)
+                    if fpath not in valid_files:
+                        try:
+                            os.remove(fpath)
+                        except Exception:
+                            pass
+
+        # 4. Attachments upload helper
         async def upload_to_gemini(path, mime_type=None, cache={}):
             retries = 5
             if path in cache:
@@ -551,75 +619,23 @@ async def handle_message(message):
                         await asyncio.sleep(2 ** attempt)
                     else:
                         raise Exception(f"Failed to upload file after {retries} attempts: {str(e)}")
-        # Attachments
-        supported_text_exts = ('.txt', '.md', '.py', '.json', '.js', '.html', '.css', '.csv', '.yaml', '.yml', '.xml', '.c', '.cpp', '.java', '.ts', '.sh', '.bat', '.ini', '.conf', '.toml', '.log')
-        text_attachment_found = False
-        image_attachment_found = False
-        audio_attachment_found = False
 
-        if message.attachments:
-            for attachment in message.attachments:
-                # IMAGE
-                if not image_attachment_found and attachment.content_type and attachment.content_type.startswith('image'):
-                    img_data = await attachment.read()
-                    img = Image.open(io.BytesIO(img_data))
-                    os.makedirs(attachment_folder, exist_ok=True)
-                    img.save(file_path1, format='PNG')
-                    files = await upload_to_gemini(file_path1, mime_type='image/png')
-                    image_attachment_found = True
-                # AUDIO
-                elif not audio_attachment_found and attachment.content_type and attachment.content_type.startswith('audio'):
-                    audio_data = await attachment.read()
-                    os.makedirs(attachment_folder, exist_ok=True)
-                    async with aiofiles.open(file_path2, 'wb') as f:
-                        await f.write(audio_data)
-                    files2 = await upload_to_gemini(file_path2, mime_type='audio/ogg')
-                    audio_attachment_found = True
-                # TEXT/CODE (by content_type or file extension)
-                elif not text_attachment_found and (
-                    (attachment.content_type and attachment.content_type.startswith('text')) or
-                    any(attachment.filename.endswith(ext) for ext in supported_text_exts)
-                ):
-                    text_data = await attachment.read()
-                    os.makedirs(attachment_folder, exist_ok=True)
-                    # Always save as TXT for Gemini
-                    async with aiofiles.open(file_path3, 'wb') as f:
-                        await f.write(text_data)
-                    files3 = await upload_to_gemini(file_path3, mime_type='text/plain')
-                    text_attachment_found = True
-        else:
-            # No new attachments, use cached files if they exist
-            if os.path.exists(file_path1):
-                files = await upload_to_gemini(file_path1, mime_type='image/png')
-            if os.path.exists(file_path2):
-                files2 = await upload_to_gemini(file_path2, mime_type='audio/ogg')
-            if os.path.exists(file_path3):
-                files3 = await upload_to_gemini(file_path3, mime_type='text/plain')
-        # Add files to chat_contents if present
-        if files:
-            chat_contents.append(types.Content(
-                role="user",
-                parts=[
-                    types.Part.from_uri(file_uri=files.uri, mime_type=files.mime_type),
-                    types.Part.from_text(text="[Instructions: This is the last image. Use as context.]")
-                ]
-            ))
-        if files2:
-            chat_contents.append(types.Content(
-                role="user",
-                parts=[
-                    types.Part.from_uri(file_uri=files2.uri, mime_type=files2.mime_type),
-                    types.Part.from_text(text="[Instructions: This is the last audio. Use as context.]")
-                ]
-            ))
-        if files3:
-            chat_contents.append(types.Content(
-                role="user",
-                parts=[
-                    types.Part.from_uri(file_uri=files3.uri, mime_type=files3.mime_type),
-                    types.Part.from_text(text="[Instructions: This is the last text file. Use as context.]")
-                ]
-            ))
+        # 5. Add the most recent attachments (up to 3 per type) to chat_contents
+        for atype, mime, instr in [
+            ('image', 'image/png', '[Instructions: This is an image. Use as context.]'),
+            ('audio', 'audio/ogg', '[Instructions: This is an audio file. Use as context.]'),
+            ('text', 'text/plain', '[Instructions: This is a text file. Use as context.]')
+        ]:
+            for fpath in list(attachment_histories[channel_id][atype])[-3:]:
+                if os.path.exists(fpath):
+                    uploaded = await upload_to_gemini(fpath, mime_type=mime)
+                    chat_contents.append(types.Content(
+                        role="user",
+                        parts=[
+                            types.Part.from_uri(file_uri=uploaded.uri, mime_type=uploaded.mime_type),
+                            types.Part.from_text(text=instr)
+                        ]
+                    ))
 
         youtube_url = extract_youtube_url(message.content)
         if youtube_url:
