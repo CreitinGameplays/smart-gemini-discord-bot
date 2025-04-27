@@ -21,6 +21,7 @@ This is a Discord bot built using the [py-cord](https://github.com/Pycord-Develo
 `v3.5` and above:
 - Brave Search API key (free but requires cc)
 - New: Google Cloud account with Imagen 3 access (needs 💵)
+
 `v4.0`:
 - Process YouTube videos (native, free)
   
