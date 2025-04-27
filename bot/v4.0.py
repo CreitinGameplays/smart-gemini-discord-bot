@@ -295,7 +295,7 @@ async def fetch_snippet(url, session, max_length=SEARCH_SNIPPET_SIZE):
             paragraphs = soup.find_all('p')
             content = ' '.join([para.get_text() for para in paragraphs])
             if len(content) > max_length:
-                return content[:max_length] + '...'
+                return content[:max_length] + '‎ '
             else:
                 return content
     except Exception as e:
@@ -714,7 +714,7 @@ async def handle_message(message):
                     full_response += text_part
                 new_chunks = split_msg(full_response) if full_response else []
                 if not new_chunks or not isinstance(new_chunks, list):
-                    new_chunks = ["..."]
+                    new_chunks = ["‎ "]
 
                 # Clean up the first chunk (remove unwanted prefixes)
                 if new_chunks:
