@@ -61,7 +61,7 @@ brave_token = os.getenv('BRAVE_TOKEN')
 gcp_project = os.getenv('GCP_PROJECT')
 
 SEARCH_SNIPPET_SIZE = 6000
-MAX_CHAT_HISTORY_MESSAGES = 20
+MAX_CHAT_HISTORY_MESSAGES = 24
 # gemini-2.5-flash-preview-04-17
 model_id = "gemini-2.5-flash-preview-04-17"
 image_model_id = "imagen-3.0-fast-generate-001"
@@ -551,7 +551,7 @@ async def handle_message(message):
                         await asyncio.sleep(2 ** attempt)
                     else:
                         raise Exception(f"Failed to upload file after {retries} attempts: {str(e)}")
-        # --- Begin improved section for ALL attachments: image, audio, text/code ---
+        # Attachments
         supported_text_exts = ('.txt', '.md', '.py', '.json', '.js', '.html', '.css', '.csv', '.yaml', '.yml', '.xml', '.c', '.cpp', '.java', '.ts', '.sh', '.bat', '.ini', '.conf', '.toml', '.log')
         text_attachment_found = False
         image_attachment_found = False
