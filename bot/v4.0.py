@@ -498,16 +498,19 @@ async def handle_message(message):
     todayday2 = f'{today2.strftime("%A")}, {today2.month}/{today2.day}/{today2.year}'
     try:
         channel_id = message.channel.id
+        # 1. Get last MAX_CHAT_HISTORY_MESSAGES messages
         channel_history = [msg async for msg in message.channel.history(limit=MAX_CHAT_HISTORY_MESSAGES)]
         channel_history.reverse()
+
         chat_history = '\n'.join([f'{author}: {content}' for author, content in channel_histories[channel_id]])
         chat_history = chat_history.replace(f'<@{bot.user.id}>', '').strip()
+
         async with message.channel.typing():
             await asyncio.sleep(1)
             bot_message = await message.reply('<a:gemini_sparkles:1321895555676504077> _ _')
             await asyncio.sleep(0.1)
         user_message = message.content.replace(f'<@{bot.user.id}>', '').strip()
-        # Attachments
+
         attachment_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'attachments')
         os.makedirs(attachment_folder, exist_ok=True)
         client = Client(api_key=ai_key)
@@ -517,19 +520,19 @@ async def handle_message(message):
             '.ogg':  'audio/ogg',
             '.mp3':  'audio/mpeg',
             '.wav':  'audio/wav',
-            '.m4a':  'audio/mp4',  # or audio/x-m4a
+            '.m4a':  'audio/mp4',
             '.flac': 'audio/flac',
             '.aac':  'audio/aac',
             '.opus': 'audio/opus',
             '.webm': 'audio/webm',
         }
         SUPPORTED_AUDIO_EXTS = tuple(AUDIO_MIME_MAP.keys())
+        SUPPORTED_TEXT_EXTS = (
+            '.txt', '.md', '.py', '.json', '.js', '.html', '.css', '.csv', '.yaml', '.yml', '.xml',
+            '.c', '.cpp', '.java', '.ts', '.sh', '.bat', '.ini', '.conf', '.toml', '.log'
+        )
 
         def classify_attachment(attachment):
-            supported_text_exts = (
-                '.txt', '.md', '.py', '.json', '.js', '.html', '.css', '.csv', '.yaml', '.yml', '.xml',
-                '.c', '.cpp', '.java', '.ts', '.sh', '.bat', '.ini', '.conf', '.toml', '.log'
-            )
             filename = attachment.filename.lower()
             if attachment.content_type and attachment.content_type.startswith('image'):
                 return 'image'
@@ -537,7 +540,7 @@ async def handle_message(message):
                 return 'audio'
             if filename.endswith(SUPPORTED_AUDIO_EXTS):
                 return 'audio'
-            if (attachment.content_type and attachment.content_type.startswith('text')) or any(filename.endswith(ext) for ext in supported_text_exts):
+            if (attachment.content_type and attachment.content_type.startswith('text')) or any(filename.endswith(ext) for ext in SUPPORTED_TEXT_EXTS):
                 return 'text'
             return None
 
@@ -559,7 +562,7 @@ async def handle_message(message):
             ]
         )
         chat_contents = []
-        # Add chat history
+        # Add chat history (text)
         for m in channel_history:
             chat_contents.append(
                 types.Content(
@@ -567,73 +570,67 @@ async def handle_message(message):
                     parts=[types.Part.from_text(text=f"{m.author}: {m.content}")]
                 )
             )
-        # Add chat history attachments
-        supported_text_exts = (
-            '.txt', '.md', '.py', '.json', '.js', '.html', '.css', '.csv', '.yaml', '.yml', '.xml',
-            '.c', '.cpp', '.java', '.ts', '.sh', '.bat', '.ini', '.conf', '.toml', '.log'
-        )
-        for m in channel_history:
+
+        # 1. Reset attachment_histories for this channel
+        attachment_histories[channel_id]["image"].clear()
+        attachment_histories[channel_id]["audio"].clear()
+        attachment_histories[channel_id]["text"].clear()
+
+        # 2. Scan only last 10 messages for attachments and save them (plus any in current msg)
+        for m in channel_history[-10:]:
             if m.attachments:
                 for attachment in m.attachments:
                     atype = classify_attachment(attachment)
                     if atype:
                         fname = f"{m.id}_{attachment.filename}"
+                        if atype == 'text':
+                            base, _ = os.path.splitext(fname)
+                            fname = base + ".txt"
+                        elif atype == 'audio':
+                            base, ext = os.path.splitext(fname)
+                            ext = ext if ext in AUDIO_MIME_MAP else '.ogg'
+                            fname = base + ext
                         fpath = os.path.join(attachment_folder, fname)
                         if not os.path.exists(fpath):
                             data = await attachment.read()
-                            # For text/code, always save as .txt
-                            if atype == 'text':
-                                base, _ = os.path.splitext(fname)
-                                fpath = os.path.join(attachment_folder, base + ".txt")
-                            # For audio, use correct extension
-                            elif atype == 'audio':
-                                base, ext = os.path.splitext(fname)
-                                ext = ext if ext in AUDIO_MIME_MAP else '.ogg'
-                                fpath = os.path.join(attachment_folder, base + ext)
                             async with aiofiles.open(fpath, 'wb') as f:
                                 await f.write(data)
                         if fpath not in attachment_histories[channel_id][atype]:
                             attachment_histories[channel_id][atype].append(fpath)
-        # 2. Handle new attachments in the current message (take priority if present)
+
+        # 3. Handle new attachments in the current message
         if message.attachments:
             for attachment in message.attachments:
                 atype = classify_attachment(attachment)
                 if atype:
                     fname = f"{message.id}_{attachment.filename}"
-                    fpath = os.path.join(attachment_folder, fname)
-                    data = await attachment.read()
-                    # For text/code, always save as .txt
                     if atype == 'text':
                         base, _ = os.path.splitext(fname)
-                        fpath = os.path.join(attachment_folder, base + ".txt")
-                    # For audio, use correct extension
+                        fname = base + ".txt"
                     elif atype == 'audio':
                         base, ext = os.path.splitext(fname)
                         ext = ext if ext in AUDIO_MIME_MAP else '.ogg'
-                        fpath = os.path.join(attachment_folder, base + ext)
+                        fname = base + ext
+                    fpath = os.path.join(attachment_folder, fname)
+                    data = await attachment.read()
                     async with aiofiles.open(fpath, 'wb') as f:
                         await f.write(data)
                     if fpath not in attachment_histories[channel_id][atype]:
                         attachment_histories[channel_id][atype].append(fpath)
 
-        # 3. Remove files older than the last 10 for each type
+        # 4. Remove files not referenced in last 10 messages or this message
+        valid_files = set()
         for atype in ['image', 'audio', 'text']:
-            valid_files = set(attachment_histories[channel_id][atype])
-            for fname in os.listdir(attachment_folder):
-                ext_ok = (
-                    (fname.endswith(('.png', '.jpg', '.jpeg')) and atype == 'image') or
-                    (any(fname.endswith(ext) for ext in SUPPORTED_AUDIO_EXTS) and atype == 'audio') or
-                    (fname.endswith('.txt') and atype == 'text')
-                )
-                if ext_ok:
-                    fpath = os.path.join(attachment_folder, fname)
-                    if fpath not in valid_files:
-                        try:
-                            os.remove(fpath)
-                        except Exception:
-                            pass
+            valid_files.update(attachment_histories[channel_id][atype])
+        for fname in os.listdir(attachment_folder):
+            fpath = os.path.join(attachment_folder, fname)
+            if fpath not in valid_files:
+                try:
+                    os.remove(fpath)
+                except Exception:
+                    pass
 
-        # 4. Attachments upload helper
+        # 5. Upload attachments to Gemini and add to chat_contents
         async def upload_to_gemini(path, mime_type=None, cache={}):
             retries = 5
             if path in cache:
@@ -649,7 +646,6 @@ async def handle_message(message):
                     else:
                         raise Exception(f"Failed to upload file after {retries} attempts: {str(e)}")
 
-        # 5. Add the most recent attachments (up to 3 per type) to chat_contents
         for atype, default_mime, instr in [
             ('image', 'image/png', '[Instructions: This is an image. Use as context.]'),
             ('audio', None, '[Instructions: This is an audio file. Use as context.]'),
@@ -657,7 +653,6 @@ async def handle_message(message):
         ]:
             for fpath in list(attachment_histories[channel_id][atype])[-3:]:
                 if os.path.exists(fpath):
-                    # Set correct audio MIME type
                     if atype == 'audio':
                         ext = os.path.splitext(fpath)[1].lower()
                         mime = AUDIO_MIME_MAP.get(ext, 'audio/ogg')
@@ -690,17 +685,17 @@ async def handle_message(message):
             )
             user_message += " [This message contains a YouTube video...]"
             print(f"Processing YouTube URL: {youtube_url}")
-        # Add user message
+
         chat_contents.append(types.Content(
             role="user",
             parts=[types.Part.from_text(text=user_message)]
         ))
-        # Generate content with Gemini
         response = client.models.generate_content_stream(
             model=model_id,
             contents=chat_contents,
             config=config
         )
+
         full_response = ""
         message_chunks = []
         post_function_call = False
