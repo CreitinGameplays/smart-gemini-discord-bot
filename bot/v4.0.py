@@ -761,12 +761,15 @@ async def handle_message(message):
                 if chunk.function_calls:
                     fn = chunk.function_calls[0]
                     # PYTHON
+
                     if fn.name == "python":
                         code_text = fn.args.get('code_text', '')
-                        bot_message2 = await message.reply(content=f"-# Executing... <a:brackets:1300121114869235752>")
+                        # Send a status message indicating that the code is executing
+                        executing_msg = await message.reply(content=f"-# Executing... <a:brackets:1300121114869235752>")
                         python_result = exec_python(code_text)
                         python_view = PythonResultView(result=code_text)
-                        await bot_message2.edit(content=f"-# Done <a:brackets:1300121114869235752>", view=python_view)
+                        # Instead of editing the executing message, send a new separate message for the result
+                        result_msg = await message.reply(content=f"-# Done <a:brackets:1300121114869235752>", view=python_view)
                         cleaned_result = clean_result(python_result)
                         function_response_part = types.Part.from_function_response(
                             name="python",
@@ -786,7 +789,8 @@ async def handle_message(message):
                             config=config
                         )
                         post_function_call = True
-                        await process_response_text(response, message, bot_message2, message_chunks)
+                        await process_response_text(response, message, executing_msg, message_chunks)
+
                     # WEB SEARCH
                     elif fn.name == "browser":
                         q = fn.args.get('q', '')
