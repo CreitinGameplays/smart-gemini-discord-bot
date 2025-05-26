@@ -361,7 +361,7 @@ def exec_python(code):
     finally:
         sys.stdout = sys.__stdout__
 
-# class for Python tool output
+# classes for views
 class PythonResultView(discord.ui.View):
     def __init__(self, result):
         super().__init__(timeout=7200)
@@ -369,6 +369,14 @@ class PythonResultView(discord.ui.View):
     @discord.ui.button(label="Show Code", style=discord.ButtonStyle.grey, emoji="⚙️")
     async def button_callback(self, button, interaction):
         await interaction.response.send_message(f"```python\n{self.result}\n```", ephemeral=True)
+
+class WebSearchResultView(discord.ui.View):
+    def __init__(self, results):
+        super().__init__(timeout=7200)
+        self.results = results
+    @discord.ui.button(label="Sources", style=discord.ButtonStyle.grey, emoji="🌐")
+    async def show_websites(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await interaction.response.send_message(f"```{self.results}```", ephemeral=True)
 
 def extract_youtube_url(text):
     """Extract and normalize YouTube video URL from text."""
@@ -780,7 +788,7 @@ async def handle_message(message):
                                 else:
                                     new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
                                     message_chunks.append(new_msg)
-                    # If a function call chunk arrives, process it and restart the stream.
+
                     if chunk.function_calls:
                         fn = chunk.function_calls[0]
                         current_response = full_response  # save text up to here
@@ -801,7 +809,8 @@ async def handle_message(message):
                             num = fn.args.get('num', 15)
                             await bot_message.edit(content=f'-# Searching \'{q}\' <a:searchingweb:1246248294322147489>')
                             wsearch_result = await browser(q, num)
-                            await bot_message.edit(content='-# Reading results... <a:searchingweb:1246248294322147489>')
+                            web_view = WebSearchResultView(results=wsearch_result)
+                            await bot_message.edit(content='-# Reading results... <a:searchingweb:1246248294322147489>', view=web_view)
                             function_response_part = types.Part.from_function_response(
                                 name="browser",
                                 response={"result": f"USE_CITATION=YES\nONLINE_RESULTS={wsearch_result}"}
@@ -844,7 +853,7 @@ async def handle_message(message):
                         break
                 except json.JSONDecodeError as e:
                     logger.error(f"Skipping invalid JSON chunk: {e}")
-                    continue  # or handle it in another way
+                    continue
                 except Exception as e:
                     print(f"Error processing chunk: {e}")
                     continue
