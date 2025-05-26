@@ -363,10 +363,14 @@ class PythonResultView(discord.ui.View):
     def __init__(self, result):
         super().__init__(timeout=180)
         self.result = result
-
-    @discord.ui.button(label="⚙️ Show Code", style=discord.ButtonStyle.primary)
+    """
+    @discord.ui.button(label=" Show Code", style=discord.ButtonStyle.primary)
     async def show_output(self, interaction: discord.Interaction, button: discord.ui.Button):
         # Send the Python tool's output as an ephemeral message
+        await interaction.response.send_message(f"```python\n{self.result}\n```", ephemeral=True)
+    """
+    @discord.ui.button(label="Show Code", style=discord.ButtonStyle.primary, emoji="⚙️")
+    async def button_callback(self, button, interaction):
         await interaction.response.send_message(f"```python\n{self.result}\n```", ephemeral=True)
 
 def extract_youtube_url(text):
@@ -767,7 +771,10 @@ async def handle_message(message):
                         code_text = fn.args.get('code_text', '')
                         await bot_message.edit(content=f"-# Executing... <a:brackets:1300121114869235752>")
                         python_result = exec_python(code_text)
-                        view = PythonResultView(python_result)
+                        view = await.message.reply(
+                            f"_ _",
+                            view=PythonResultView(result=python_result)
+                        )
                         await bot_message.edit(content=f"-# Done <a:brackets:1300121114869235752>")
                         cleaned_result = clean_result(python_result)
                         function_response_part = types.Part.from_function_response(
