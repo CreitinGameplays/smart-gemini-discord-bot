@@ -22,6 +22,7 @@ from google.oauth2 import service_account
 import logging
 from logging.handlers import RotatingFileHandler
 import traceback
+import mimetypes
 
 # Gemini SDK (new)
 from google.genai import Client, types
@@ -237,32 +238,6 @@ intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
 bot = discord.Client(intents=intents)
-
-# File upload helper
-async def upload_and_save_file(attachment, channel_id):
-    save_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'attachments')
-    os.makedirs(save_dir, exist_ok=True)
-    if attachment.content_type.startswith('image'):
-        img_data = await attachment.read()
-        img = Image.open(io.BytesIO(img_data))
-        filename = f'user_attachment_{channel_id}.png'
-        filepath = os.path.join(save_dir, filename)
-        img.save(filepath, format='PNG')
-        return filepath
-    elif attachment.content_type.startswith('audio'):
-        filename = f'user_attachment_{channel_id}.ogg'
-        filepath = os.path.join(save_dir, filename)
-        async with aiofiles.open(filepath, 'wb') as f:
-            await f.write(await attachment.read())
-        return filepath
-    elif attachment.content_type.startswith('text'):
-        filename = f'user_attachment_{channel_id}.txt'
-        filepath = os.path.join(save_dir, filename)
-        async with aiofiles.open(filepath, 'wb') as f:
-            await f.write(await attachment.read())
-        return filepath
-    else:
-        return None
 
 # Brave search
 async def search_brave(search_query, session):
@@ -679,15 +654,20 @@ async def handle_message(message):
             for fpath in list(attachment_histories[channel_id][atype])[-3:]:
                 if os.path.exists(fpath):
                     if atype == 'audio':
-                        ext = os.path.splitext(fpath)[1].lower()
-                        mime = AUDIO_MIME_MAP.get(ext, 'audio/ogg')
+                        # First, try the mimetypes library for a more accurate detection
+                        mime_type, _ = mimetypes.guess_type(fpath)
+                        if not mime_type:
+                            # Fall back to our custom mapping if mimetypes doesn't return a value
+                            ext = os.path.splitext(fpath)[1].lower()
+                            mime_type = AUDIO_MIME_MAP.get(ext, 'audio/mpeg')
+                        mime = mime_type
                     else:
                         mime = default_mime
-                    uploaded = await upload_to_gemini(fpath, mime_type=mime)
+                    uploaded = await upload_to_gemini(fpath)
                     chat_contents.append(types.Content(
                         role="user",
                         parts=[
-                            types.Part.from_uri(file_uri=uploaded.uri, mime_type=uploaded.mime_type),
+                            types.Part.from_uri(file_uri=uploaded.uri, mime_type=mime),
                             types.Part.from_text(text=instr)
                         ]
                     ))
