@@ -769,7 +769,7 @@ async def handle_message(message):
                         python_result = exec_python(code_text)
                         python_view = PythonResultView(result=code_text)
                         # Instead of editing the executing message, send a new separate message for the result
-                        await executing_msg.edit(content=f"-# Done <a:brackets:1300121114869235752>", view=python_view)
+                        result_msg = await message.reply(content=f"", view=python_view)
                         cleaned_result = clean_result(python_result)
                         function_response_part = types.Part.from_function_response(
                             name="python",
