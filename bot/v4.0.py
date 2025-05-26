@@ -394,9 +394,11 @@ def clean_result(result):
 # Discord events and message handler
 @bot.event
 async def on_ready():
+    msg = discord.Game("Made by Creitin Gameplays! 🌟")
+    await client.change_presence(status=discord.Status.idle, activity=msg)
     print(f'Logged in as {bot.user}!')
 
-allowed_ids = [775678427511783434] # creitin id lol
+allowed_ids = [775678427511783434] # creitin id xd
 
 @bot.event
 async def on_message(message):
