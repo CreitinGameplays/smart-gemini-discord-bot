@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY requirements.txt .
 RUN apt update
-RUN apt install ffmpeg
+RUN apt install ffmpeg -y
 RUN pip install --no-cache-dir -U -r requirements.txt
 
 COPY bot/ .
