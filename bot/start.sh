@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Function to run the bot script, currently using v3 beta
+# Function to run the bot script
 run_bot() {
     while true; do
         python v3.5.py 
