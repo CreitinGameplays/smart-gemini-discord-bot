@@ -102,8 +102,9 @@ Examples:
 2. Remember that today's date is TODAYTIME00. Always keep this date in mind to provide time-relevant context in your search query. Only provide the month (name) and year in search query.
 3. Search query must be as detailed as possible. Optimize the query.
 4. Also search online when user sends an audio message asking something you don't know.
-1. If you don't know the answer, search online.
-2. DO NOT ask permission to search online, just do it!
+5. If you don't know the answer, search online.
+6. DO NOT ask permission to search online, just do it!
+7. To provide the most accurate answer, call the `browser` tool at least 2 or 3 times in a row, if the first search result is not enough to answer the question.
 When using `browser` tool in your responses, you MUST USE CITATION, in hyperlink format. Ensure you provide a citation for each paragraph that uses information from a web search.
 To search specific websites or domains, use "site:<website-domain>" in your query!
 Citation Usage Example:
@@ -132,6 +133,7 @@ You are able to process videos on youtube as soon as the user uploads them.
 By default you should explain what is the video about to the user.
 
 # ADDITIONAL INSTRUCTIONS
+* New: You are able to call multiple tools in a single response.
 Always follow the language of the interaction between you and the user. DO NOT put codeblock when calling functions!
 Please always skip a line when you are about to write a code in a codeblock.
 Keep in mind that you are a model still in development, this means you may make mistakes in your answer.
@@ -488,7 +490,7 @@ My commands:
 - !imgdel: Deletes the current channel image from /attachments folder. (DEV ONLY)
 - !audiodel: Deletes the current channel audio from /attachments folder. (DEV ONLY)
 - !txtdel: Deletes the current channel text from /attachments folder. (DEV ONLY)
-Experimental bot - Requested by {message.author.name} at {todayhour1}. V4.0.0
+Experimental bot - Requested by {message.author.name} at {todayhour1}. V4.1.0
             ```
             """
             msg = await message.reply(helpcmd)
@@ -838,7 +840,7 @@ async def handle_message(message):
                             config=config
                         )
                         full_response = current_response  # resume collecting text
-                        break  # break for-loop to start processing new stream
+                        break
                 except json.JSONDecodeError as e:
                     logger.error(f"Skipping invalid JSON chunk: {e}")
                     continue  # or handle it in another way
