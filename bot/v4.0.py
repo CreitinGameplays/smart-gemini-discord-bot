@@ -358,6 +358,17 @@ def exec_python(code):
     finally:
         sys.stdout = sys.__stdout__
 
+# class for Python tool output
+class PythonResultView(discord.ui.View):
+    def __init__(self, result):
+        super().__init__(timeout=180)
+        self.result = result
+
+    @discord.ui.button(label="⚙️ Show Code", style=discord.ButtonStyle.primary)
+    async def show_output(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Send the Python tool's output as an ephemeral message
+        await interaction.response.send_message(f"```python\n{self.result}\n```", ephemeral=True)
+
 def extract_youtube_url(text):
     """Extract and normalize YouTube video URL from text."""
     if not text:
@@ -699,25 +710,30 @@ async def handle_message(message):
         message_chunks = []
         post_function_call = False
 
-        async def process_response_text(response, message, bot_message, message_chunks, force_new=False):
+        async def process_response_text(response, message, bot_message, message_chunks):
             nonlocal full_response
             try:
+                # Only accumulate the text part of the response; ignore function_call fields.
                 text_part = response.text if hasattr(response, 'text') and response.text else ""
                 if text_part:
                     full_response += text_part
                 new_chunks = split_msg(full_response) if full_response else []
                 if not new_chunks or not isinstance(new_chunks, list):
                     new_chunks = ["‎ "]
+
+                # Clean up the first chunk (remove unwanted prefixes)
+                if new_chunks:
+                    new_chunks[0] = new_chunks[0].replace("Gemini:", "", 1)
+                    new_chunks[0] = new_chunks[0].replace("Language Model#3241:", "", 1)
+
                 new_chunks = ["‎ " if chunk.strip() == "" else chunk for chunk in new_chunks]
 
+                # Update messages with each chunk
                 for i in range(len(new_chunks)):
-                    # When force_new is True, always send a new message
-                    if force_new:
-                        new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
-                        message_chunks.append(new_msg)
-                    else:
+                    try:
                         if i < len(message_chunks):
-                            await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                            if message_chunks[i]:
+                                await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
                         else:
                             if i == 0 and bot_message:
                                 await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
@@ -725,8 +741,11 @@ async def handle_message(message):
                             else:
                                 new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
                                 message_chunks.append(new_msg)
+                    except Exception as e:
+                        print(f"Error updating message {i}: {e}")
+                        continue
 
-                # Finalize messages by removing the loading icon
+                # Finalize messages by removing the animation icon
                 for i in range(len(message_chunks)):
                     try:
                         if i < len(new_chunks) and message_chunks[i]:
@@ -737,6 +756,7 @@ async def handle_message(message):
             except Exception as e:
                 print(f"Error in process_response_text: {e}")
                 return None
+
         # Process Gemini response
         for chunk in response:
             try:
@@ -747,6 +767,7 @@ async def handle_message(message):
                         code_text = fn.args.get('code_text', '')
                         await bot_message.edit(content=f"-# Executing... <a:brackets:1300121114869235752>")
                         python_result = exec_python(code_text)
+                        view = PythonResultView(python_result)
                         await bot_message.edit(content=f"-# Done <a:brackets:1300121114869235752>")
                         cleaned_result = clean_result(python_result)
                         function_response_part = types.Part.from_function_response(
@@ -767,7 +788,7 @@ async def handle_message(message):
                             config=config
                         )
                         post_function_call = True
-                        await process_response_text(response, message, bot_message, message_chunks, force_new=True)
+                        await process_response_text(response, message, bot_message, message_chunks)
                     # WEB SEARCH
                     elif fn.name == "browser":
                         q = fn.args.get('q', '')
