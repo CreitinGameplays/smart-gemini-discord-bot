@@ -400,9 +400,9 @@ allowed_ids = [775678427511783434] # creitin id lol
 
 @bot.event
 async def on_message(message):
-"""
-TODO: turn then into cog slash commands
-"""
+    """
+    TODO: turn then into cog slash commands
+    """
     channel_id = message.channel.id
     if message.author == bot.user:
         return
