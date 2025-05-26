@@ -355,7 +355,7 @@ class WebSearchResultView(discord.ui.View):
         urls = re.findall(r'Link:\s*(\S+)', self.results)
         output = "\n".join(urls)
         if len(output) > 2000:
-            output = output[:1950] + "..."
+            output = output[:1900] + "..."
         await interaction.response.send_message(f"Sources:\n```{output}```", ephemeral=True)
 
 def extract_youtube_url(text):
@@ -812,8 +812,6 @@ async def handle_message(message):
                             await bot_message.edit(content=f'-# Searching \'{q}\' <a:searchingweb:1246248294322147489>')
                             wsearch_result = await browser(q, num)
                             aggregated_wsearch_results += wsearch_result
-                            if len(aggregated_wsearch_results) > 1900:
-                                aggregated_wsearch_results = aggregated_wsearch_results[:1900] + "\n..."
                             web_view = WebSearchResultView(results=aggregated_wsearch_results)
                             await bot_message.edit(content='-# Reading results... <a:searchingweb:1246248294322147489>', view=web_view)
                             function_response_part = types.Part.from_function_response(
