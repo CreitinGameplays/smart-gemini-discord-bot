@@ -771,7 +771,7 @@ async def handle_message(message):
                         code_text = fn.args.get('code_text', '')
                         await bot_message.edit(content=f"-# Executing... <a:brackets:1300121114869235752>")
                         python_result = exec_python(code_text)
-                        view = await.message.reply(
+                        view = await message.reply(
                             f"_ _",
                             view=PythonResultView(result=python_result)
                         )
