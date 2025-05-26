@@ -361,15 +361,9 @@ def exec_python(code):
 # class for Python tool output
 class PythonResultView(discord.ui.View):
     def __init__(self, result):
-        super().__init__(timeout=180)
+        super().__init__(timeout=7200)
         self.result = result
-    """
-    @discord.ui.button(label=" Show Code", style=discord.ButtonStyle.primary)
-    async def show_output(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Send the Python tool's output as an ephemeral message
-        await interaction.response.send_message(f"```python\n{self.result}\n```", ephemeral=True)
-    """
-    @discord.ui.button(label="Show Code", style=discord.ButtonStyle.primary, emoji="⚙️")
+    @discord.ui.button(label="Show Code", style=discord.ButtonStyle.grey, emoji="⚙️")
     async def button_callback(self, button, interaction):
         await interaction.response.send_message(f"```python\n{self.result}\n```", ephemeral=True)
 
@@ -772,8 +766,8 @@ async def handle_message(message):
                         await bot_message.edit(content=f"-# Executing... <a:brackets:1300121114869235752>")
                         python_result = exec_python(code_text)
                         view = await message.reply(
-                            f"_ _",
-                            view=PythonResultView(result=python_result)
+                            f" ",
+                            view=PythonResultView(result=code_text)
                         )
                         await bot_message.edit(content=f"-# Done <a:brackets:1300121114869235752>")
                         cleaned_result = clean_result(python_result)
