@@ -395,7 +395,7 @@ def clean_result(result):
 @bot.event
 async def on_ready():
     msg = discord.Game("Made by Creitin Gameplays! 🌟")
-    await client.change_presence(status=discord.Status.online, activity=msg)
+    await bot.change_presence(status=discord.Status.online, activity=msg)
     print(f'Logged in as {bot.user}!')
 
 allowed_ids = [775678427511783434] # creitin id xd
