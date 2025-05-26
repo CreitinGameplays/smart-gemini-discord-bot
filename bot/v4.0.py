@@ -759,7 +759,6 @@ async def handle_message(message):
         while True:
             for chunk in response_stream:
                 try:
-                    chunk_data = json.loads(chunk)
                     # If text is included, accumulate and update messages.
                     if chunk.text:
                         full_response += chunk.text
@@ -840,10 +839,9 @@ async def handle_message(message):
                         )
                         full_response = current_response  # resume collecting text
                         break  # break for-loop to start processing new stream
-                # if json decoding fails, log the error and continue
                 except json.JSONDecodeError as e:
-                    logger.error(f"Skipping malformed chunk: {chunk}. Error: {e}")
-                    continue
+                    logger.error(f"Skipping invalid JSON chunk: {e}")
+                    continue  # or handle it in another way
                 except Exception as e:
                     print(f"Error processing chunk: {e}")
                     continue
