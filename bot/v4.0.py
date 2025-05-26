@@ -699,30 +699,25 @@ async def handle_message(message):
         message_chunks = []
         post_function_call = False
 
-        async def process_response_text(response, message, bot_message, message_chunks):
+        async def process_response_text(response, message, bot_message, message_chunks, force_new=False):
             nonlocal full_response
             try:
-                # Only accumulate the text part of the response; ignore function_call fields.
                 text_part = response.text if hasattr(response, 'text') and response.text else ""
                 if text_part:
                     full_response += text_part
                 new_chunks = split_msg(full_response) if full_response else []
                 if not new_chunks or not isinstance(new_chunks, list):
                     new_chunks = ["‎ "]
-
-                # Clean up the first chunk (remove unwanted prefixes)
-                if new_chunks:
-                    new_chunks[0] = new_chunks[0].replace("Gemini:", "", 1)
-                    new_chunks[0] = new_chunks[0].replace("Language Model#3241:", "", 1)
-
                 new_chunks = ["‎ " if chunk.strip() == "" else chunk for chunk in new_chunks]
 
-                # Update messages with each chunk
                 for i in range(len(new_chunks)):
-                    try:
+                    # When force_new is True, always send a new message
+                    if force_new:
+                        new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                        message_chunks.append(new_msg)
+                    else:
                         if i < len(message_chunks):
-                            if message_chunks[i]:
-                                await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                            await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
                         else:
                             if i == 0 and bot_message:
                                 await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
@@ -730,11 +725,8 @@ async def handle_message(message):
                             else:
                                 new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
                                 message_chunks.append(new_msg)
-                    except Exception as e:
-                        print(f"Error updating message {i}: {e}")
-                        continue
 
-                # Finalize messages by removing the animation icon
+                # Finalize messages by removing the loading icon
                 for i in range(len(message_chunks)):
                     try:
                         if i < len(new_chunks) and message_chunks[i]:
@@ -775,7 +767,7 @@ async def handle_message(message):
                             config=config
                         )
                         post_function_call = True
-                        await process_response_text(response, message, bot_message, message_chunks)
+                        await process_response_text(response, message, bot_message, message_chunks, force_new=True)
                     # WEB SEARCH
                     elif fn.name == "browser":
                         q = fn.args.get('q', '')
