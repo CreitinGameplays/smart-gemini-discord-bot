@@ -76,8 +76,7 @@ attachment_histories = defaultdict(lambda: {
 })
 
 # SYSTEM PROMPT
-base_system_prompt = f"""
-You are a Web AI assistant named Gemini, trained by Google. You are designed to provide accurate and real-time information to the user, by using your `browser` tool. Your primary feature is the ability to search the internet and retrieve relevant, high-quality, and recent information to answer user queries.
+base_system_prompt = f"""You are a Web AI assistant named Gemini, trained by Google. You are designed to provide accurate and real-time information to the user, by using your `browser` tool. Your primary feature is the ability to search the internet and retrieve relevant, high-quality, and recent information to answer user queries.
 You are currently operating within a Discord bot, and the bot developer is the user "creitingameplays". DO NEVER start your response with tags like "discord_username:" or "discord_username#1234:". Your current knowledge cutoff is January 2025, but you can access up-to-date information using `browser` tool. Today is TODAYTIME00. You can't provide the current time. Your current model ID: `{model_id}`. Your image model ID: `{image_model_id}`.
 
 DEVELOPER MODE: ENABLED
@@ -136,7 +135,7 @@ You are able to process videos on youtube as soon as the user uploads them.
 By default you should explain what is the video about to the user.
 
 # ADDITIONAL INSTRUCTIONS
-* New: You are able to call multiple tools in a single response.
+* New: You can call multiple tools in a single response.
 Always follow the language of the interaction between you and the user. DO NOT put codeblock when calling functions!
 Please always skip a line when you are about to write a code in a codeblock.
 Keep in mind that you are a model still in development, this means you may make mistakes in your answer.
@@ -353,7 +352,6 @@ class WebSearchResultView(discord.ui.View):
     @discord.ui.button(label="Sources", style=discord.ButtonStyle.grey, emoji="🌐")
     async def show_websites(self, button: discord.ui.Button, interaction: discord.Interaction):
         import re
-        # Extract URLs from the results string (which contains lines like "Link: <url>")
         urls = re.findall(r'Link:\s*(\S+)', self.results)
         output = "\n".join(urls)
         if len(output) > 2000:
@@ -361,7 +359,6 @@ class WebSearchResultView(discord.ui.View):
         await interaction.response.send_message(f"Sources:\n```{output}```", ephemeral=True)
 
 def extract_youtube_url(text):
-    """Extract and normalize YouTube video URL from text."""
     if not text:
         return None
 
@@ -399,10 +396,13 @@ def clean_result(result):
 async def on_ready():
     print(f'Logged in as {bot.user}!')
 
-allowed_ids = [775678427511783434]
+allowed_ids = [775678427511783434] # creitin id lol
 
 @bot.event
 async def on_message(message):
+"""
+TODO: turn then into cog slash commands
+"""
     channel_id = message.channel.id
     if message.author == bot.user:
         return
@@ -499,7 +499,6 @@ async def handle_message(message):
     todayday2 = f'{today2.strftime("%A")}, {today2.month}/{today2.day}/{today2.year}'
     try:
         channel_id = message.channel.id
-        # 1. Get last MAX_CHAT_HISTORY_MESSAGES messages
         channel_history = [msg async for msg in message.channel.history(limit=MAX_CHAT_HISTORY_MESSAGES)]
         channel_history.reverse()
 
@@ -655,18 +654,15 @@ async def handle_message(message):
             for fpath in list(attachment_histories[channel_id][atype])[-3:]:
                 if os.path.exists(fpath):
                     if atype == 'audio':
-                        # If the audio file is in .ogg format, convert it to .mp3
                         file_ext = os.path.splitext(fpath)[1].lower()
                         if file_ext == ".ogg":
                             mp3_path = os.path.splitext(fpath)[0] + ".mp3"
                             if not os.path.exists(mp3_path):
                                 audio = AudioSegment.from_ogg(fpath)
                                 audio.export(mp3_path, format="mp3")
-                            # Use the converted file and update mimetype accordingly
                             fpath = mp3_path
                             mime = 'audio/mpeg'
                         else:
-                            # First, try the mimetypes library for a more accurate detection
                             mime_type, _ = mimetypes.guess_type(fpath)
                             if not mime_type:
                                 ext = os.path.splitext(fpath)[1].lower()
@@ -855,7 +851,6 @@ async def handle_message(message):
                     print(f"Error processing chunk: {e}")
                     continue
             else:
-                # Stream finished without function calls.
                 break
 
         # Finalize all messages by removing the animation icon.
