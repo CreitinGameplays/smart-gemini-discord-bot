@@ -765,11 +765,8 @@ async def handle_message(message):
                         code_text = fn.args.get('code_text', '')
                         await bot_message.edit(content=f"-# Executing... <a:brackets:1300121114869235752>")
                         python_result = exec_python(code_text)
-                        view = await message.reply(
-                            f" ",
-                            view=PythonResultView(result=code_text)
-                        )
-                        await bot_message.edit(content=f"-# Done <a:brackets:1300121114869235752>")
+                        python_view = PythonResultView(result=code_text)
+                        await bot_message.edit(content=f"-# Done <a:brackets:1300121114869235752>", view=python_view)
                         cleaned_result = clean_result(python_result)
                         function_response_part = types.Part.from_function_response(
                             name="python",
