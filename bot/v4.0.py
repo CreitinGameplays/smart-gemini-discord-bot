@@ -23,6 +23,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 import traceback
 import mimetypes
+from pydub import AudioSegment
 
 # Gemini SDK (new)
 from google.genai import Client, types
@@ -654,13 +655,23 @@ async def handle_message(message):
             for fpath in list(attachment_histories[channel_id][atype])[-3:]:
                 if os.path.exists(fpath):
                     if atype == 'audio':
-                        # First, try the mimetypes library for a more accurate detection
-                        mime_type, _ = mimetypes.guess_type(fpath)
-                        if not mime_type:
-                            # Fall back to our custom mapping if mimetypes doesn't return a value
-                            ext = os.path.splitext(fpath)[1].lower()
-                            mime_type = AUDIO_MIME_MAP.get(ext, 'audio/mpeg')
-                        mime = mime_type
+                        # If the audio file is in .ogg format, convert it to .mp3
+                        file_ext = os.path.splitext(fpath)[1].lower()
+                        if file_ext == ".ogg":
+                            mp3_path = os.path.splitext(fpath)[0] + ".mp3"
+                            if not os.path.exists(mp3_path):
+                                audio = AudioSegment.from_ogg(fpath)
+                                audio.export(mp3_path, format="mp3")
+                            # Use the converted file and update mimetype accordingly
+                            fpath = mp3_path
+                            mime = 'audio/mpeg'
+                        else:
+                            # First, try the mimetypes library for a more accurate detection
+                            mime_type, _ = mimetypes.guess_type(fpath)
+                            if not mime_type:
+                                ext = os.path.splitext(fpath)[1].lower()
+                                mime_type = AUDIO_MIME_MAP.get(ext, 'audio/mpeg')
+                            mime = mime_type
                     else:
                         mime = default_mime
                     uploaded = await upload_to_gemini(fpath)
