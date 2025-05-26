@@ -662,7 +662,7 @@ async def handle_message(message):
                 return cache[path]
             for attempt in range(retries):
                 try:
-                    uploaded_file = client.files.upload(file=path, mime_type=mime_type)
+                    uploaded_file = client.files.upload(file=path)
                     cache[path] = uploaded_file
                     return uploaded_file
                 except Exception as e:
