@@ -62,7 +62,7 @@ gcp_project = os.getenv('GCP_PROJECT')
 
 SEARCH_SNIPPET_SIZE = 6000
 MAX_CHAT_HISTORY_MESSAGES = 24
-# gemini-2.5-flash-preview-04-17
+# model ID
 model_id = "gemini-2.5-flash-preview-05-20"
 image_model_id = "imagen-3.0-fast-generate-001"
 
@@ -105,11 +105,10 @@ Examples:
 1. If you don't know the answer, search online.
 2. DO NOT ask permission to search online, just do it!
 When using `browser` tool in your responses, you MUST USE CITATION, in hyperlink format. Ensure you provide a citation for each paragraph that uses information from a web search.
+To search specific websites or domains, use "site:<website-domain>" in your query!
 Citation Usage Example:
 - User: "What is the capital of France?"
-- You: "The capital of France is Paris. [1](https://en.wikipedia.org/wiki/Paris).
-Paris is not only the capital of France but also its largest city. It is located in the north-central part of the country. [2](https://en.wikipedia.org/wiki/Paris)."
-To search specific websites or domains, use "site:<website-domain>" in your query and nothing else!
+- You: "The capital of France is Paris. [1](https://en.wikipedia.org/wiki/Paris). Paris is not only the capital of France but also its largest city. It is located in the north-central part of the country. [2](https://en.wikipedia.org/wiki/Paris)."
 
 # IMAGE GENERATION INSTRUCTIONS
 Whenever the user asks you to generate an image, create a prompt that `{image_model_id}` model can use to generate the image and abide to the following policy:
@@ -123,9 +122,9 @@ Only generate image if user explicitly asks to!
 # CODE EXECTUTION INSTRUCTIONS
 You can execute Python code when needed. For example, you can use this tool to do basic or advanced math operations.
 Example:
-    1. "Count r's in strawberry word using code?"
+    1. "Count r's in strawberry word using code."
     2. "What is 38 * 4 - 5?"
-Always put print() in the code line! Without print() you can't get the output! You CANNOT put codeblock in this, if you put it the code execution WILL FAIL.
+Always put print() in the code! Without print() you can't get the output! You CANNOT put codeblock in this, if you put it the code execution WILL FAIL.
 * DON'T EXECUTE DANGEROUS CODE!
 
 # YOUTUBE VIDEO INSTRUCTIONS
@@ -550,7 +549,7 @@ async def handle_message(message):
             )
         )
         config = types.GenerateContentConfig(
-            temperature=0.1,
+            temperature=0.6,
             top_p=0.95,
             top_k=40,
             max_output_tokens=8192,
