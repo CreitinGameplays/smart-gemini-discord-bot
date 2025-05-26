@@ -552,8 +552,8 @@ async def handle_message(message):
             )
         )
         config = types.GenerateContentConfig(
-            temperature=0.6,
-            top_p=0.95,
+            temperature=0.5,
+            top_p=0.9,
             top_k=40,
             max_output_tokens=8192,
             response_mime_type="text/plain",
