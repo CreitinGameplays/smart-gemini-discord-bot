@@ -376,7 +376,13 @@ class WebSearchResultView(discord.ui.View):
         self.results = results
     @discord.ui.button(label="Sources", style=discord.ButtonStyle.grey, emoji="🌐")
     async def show_websites(self, button: discord.ui.Button, interaction: discord.Interaction):
-        await interaction.response.send_message(f"```{self.results}```", ephemeral=True)
+        import re
+        # Extract URLs from the results string (which contains lines like "Link: <url>")
+        urls = re.findall(r'Link:\s*(\S+)', self.results)
+        output = "\n".join(urls)
+        if len(output) > 2000:
+            output = output[:1990] + "..."
+        await interaction.response.send_message(f"Sources:\n```{output}```", ephemeral=True)
 
 def extract_youtube_url(text):
     """Extract and normalize YouTube video URL from text."""
