@@ -713,6 +713,7 @@ async def handle_message(message):
         full_response = ""
         message_chunks = []
         post_function_call = False
+        aggregated_wsearch_results = ""
 
         async def process_response_text(response, message, bot_message, message_chunks):
             nonlocal full_response
@@ -738,12 +739,15 @@ async def handle_message(message):
                         if i < len(message_chunks):
                             if message_chunks[i]:
                                 await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                await asyncio.sleep(0.8)
                         else:
                             if i == 0 and bot_message:
                                 await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                await asyncio.sleep(0.8)
                                 message_chunks.append(bot_message)
                             else:
                                 new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                await asyncio.sleep(0.8)
                                 message_chunks.append(new_msg)
                     except Exception as e:
                         print(f"Error updating message {i}: {e}")
@@ -776,12 +780,15 @@ async def handle_message(message):
                         for i in range(len(new_chunks)):
                             if i < len(message_chunks):
                                 await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                await asyncio.sleep(0.8)
                             else:
                                 if i == 0:
                                     await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                    await asyncio.sleep(0.8)
                                     message_chunks.append(bot_message)
                                 else:
                                     new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                    await asyncio.sleep(0.8)
                                     message_chunks.append(new_msg)
 
                     if chunk.function_calls:
@@ -804,11 +811,14 @@ async def handle_message(message):
                             num = fn.args.get('num', 15)
                             await bot_message.edit(content=f'-# Searching \'{q}\' <a:searchingweb:1246248294322147489>')
                             wsearch_result = await browser(q, num)
-                            web_view = WebSearchResultView(results=wsearch_result)
+                            aggregated_wsearch_results += f"\nSearch Query: {q}\n{wsearch_result}\n"
+                            if len(aggregated_wsearch_results) > 1900:
+                                aggregated_wsearch_results = aggregated_wsearch_results[:1900] + "\n..."
+                            web_view = WebSearchResultView(results=aggregated_wsearch_results)
                             await bot_message.edit(content='-# Reading results... <a:searchingweb:1246248294322147489>', view=web_view)
                             function_response_part = types.Part.from_function_response(
                                 name="browser",
-                                response={"result": f"USE_CITATION=YES\nONLINE_RESULTS={wsearch_result}"}
+                                response={"result": f"USE_CITATION=YES\nONLINE_RESULTS={aggregated_wsearch_results}"}
                             )
                         elif fn.name == "imagine":
                             prompt = fn.args.get('prompt', '')
