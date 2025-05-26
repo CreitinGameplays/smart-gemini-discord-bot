@@ -811,14 +811,12 @@ async def handle_message(message):
                             num = fn.args.get('num', 15)
                             await bot_message.edit(content=f'-# Searching \'{q}\' <a:searchingweb:1246248294322147489>')
                             wsearch_result = await browser(q, num)
-                            aggregated_wsearch_results += f"\nSearch Query: {q}\n{wsearch_result}\n"
-                            if len(aggregated_wsearch_results) > 1900:
-                                aggregated_wsearch_results = aggregated_wsearch_results[:1900] + "\n..."
+                            aggregated_wsearch_results += wsearch_result
                             web_view = WebSearchResultView(results=aggregated_wsearch_results)
                             await bot_message.edit(content='-# Reading results... <a:searchingweb:1246248294322147489>', view=web_view)
                             function_response_part = types.Part.from_function_response(
                                 name="browser",
-                                response={"result": f"USE_CITATION=YES\nONLINE_RESULTS={aggregated_wsearch_results}"}
+                                response={"result": f"USE_CITATION=YES\nONLINE_RESULTS={wsearch_result}"}
                             )
                         elif fn.name == "imagine":
                             prompt = fn.args.get('prompt', '')
