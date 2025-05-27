@@ -28,8 +28,20 @@ from tools import *
 MONGO_URI = os.getenv('MONGO_URI')
 mongo_client = MongoClient(MONGO_URI, server_api=ServerApi('1'))
 
+async def setup_mongodb():
+    try:
+        # Check if the database exists
+        db = mongo_client["gemini-bot-db"]
+        c_list = mongo_client.list_collections()
+        if 'gemini_bot' not in c_list:
+            print("Creating 'gemini_bot' database...")
+            await db.create_collection("gemini_bot")
+        else:
+            print("'gemini_bot' database already exists.")
+    except Exception as e:
+        print(f"Error setting up MongoDB: {e}")
+
 # mongo db will be useful for stuff later
-# yes this bot will have more features
 
 # Logging
 handler = RotatingFileHandler(
@@ -224,6 +236,12 @@ intents.messages = True
 intents.message_content = True
 bot = discord.Client(intents=intents)
 
+# add cogs
+cogs_list = [
+]
+for cog in cogs_list:
+    bot.load_extension(f'cogs.{cog}')
+    
 # classes for views
 class PythonResultView(discord.ui.View):
     def __init__(self, result):
@@ -236,7 +254,7 @@ class PythonResultView(discord.ui.View):
             description=f"```python\n{self.result}\n```",
             color=discord.Colour.blue()
         )
-        code_embed.set_thumbnail(url="https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg")
+        code_embed.set_thumbnail(url="https://s3.dualstack.us-east-2.amazonaws.com/pythondotorg-assets/media/community/logos/python-logo-only.png")
         await interaction.response.send_message(embed=code_embed, ephemeral=True)
 
 class WebSearchResultView(discord.ui.View):
@@ -294,6 +312,7 @@ def clean_result(result):
 # Discord events and message handler
 @bot.event
 async def on_ready():
+    await setup_mongodb()
     msg = discord.Game("Made by Creitin Gameplays! 🌟")
     await bot.change_presence(status=discord.Status.online, activity=msg)
     print(f'Logged in as {bot.user}!')
@@ -328,62 +347,14 @@ async def on_message(message):
             unauthorized = await message.reply(":x: You don't have permissions to run this command.")
             await asyncio.sleep(5)
             await unauthorized.delete()
-    if message.content.startswith('!imgdel'):
-        if message.author.id in allowed_ids:
-            try:
-                file_path = f"attachments/user_attachment_{channel_id}.png"
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-                    await message.reply(f"`{message.author.name}, image deleted` :white_check_mark:")
-                await restart_bot()
-            except Exception as e:
-                logger.error("An error occurred:\n" + traceback.format_exc())
-                await message.reply(f":x: An error occurred: `{e}`")
-        else:
-            unauthorized = await message.reply(":x: You don't have permissions to run this command.")
-            await asyncio.sleep(5)
-            await unauthorized.delete()
-    if message.content.startswith('!audiodel'):
-        if message.author.id in allowed_ids:
-            try:
-                file_path = f"attachments/user_attachment_{channel_id}.ogg"
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-                    await message.reply(f"`{message.author.name}, audio deleted` :white_check_mark:")
-                await restart_bot()
-            except Exception as e:
-                logger.error("An error occurred:\n" + traceback.format_exc())
-                await message.reply(f":x: An error occurred: `{e}`")
-        else:
-            unauthorized = await message.reply(":x: You don't have permissions to run this command.")
-            await asyncio.sleep(5)
-            await unauthorized.delete()
-    if message.content.startswith('!txtdel'):
-        if message.author.id in allowed_ids:
-            try:
-                file_path = f"attachments/user_attachment_{channel_id}.txt"
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-                    await message.reply(f"`{message.author.name}, text deleted` :white_check_mark:")
-                await restart_bot()
-            except Exception as e:
-                logger.error("An error occurred:\n" + traceback.format_exc())
-                await message.reply(f":x: An error occurred: `{e}`")
-        else:
-            unauthorized = await message.reply(":x: You don't have permissions to run this command.")
-            await asyncio.sleep(5)
-            await unauthorized.delete()
     if message.content.startswith('!h'):
         try:
             helpcmd = f"""
             ```
 My commands:
-- !k: Kills the bot process. (DEV ONLY)
-- !r: Restarts the bot. (DEV ONLY)
-- !imgdel: Deletes the current channel image from /attachments folder. (DEV ONLY)
-- !audiodel: Deletes the current channel audio from /attachments folder. (DEV ONLY)
-- !txtdel: Deletes the current channel text from /attachments folder. (DEV ONLY)
-Experimental bot - Requested by {message.author.name} at {todayhour1}. V4.1.0
+to be implemented:
+Experimental bot - Requested by {message.author.name} at {todayhour1}. V4.1.5
+Bot developed by Creitin Gameplays.
             ```
             """
             msg = await message.reply(helpcmd)
