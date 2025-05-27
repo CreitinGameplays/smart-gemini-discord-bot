@@ -1,24 +1,15 @@
 import discord
 import aiofiles
 import asyncio
-import random
 import os
-import io
 import sys
 from collections import defaultdict, deque
-from bs4 import BeautifulSoup
-import aiohttp
 import datetime
 import json
 from json.decoder import JSONDecodeError
 import re
-import shutil
 import time
 from PIL import Image
-import ssl
-import textwrap
-import base64
-from google.oauth2 import service_account
 import logging
 from logging.handlers import RotatingFileHandler
 import traceback
@@ -30,9 +21,6 @@ from pymongo.server_api import ServerApi
 # Gemini SDK (new)
 from google.genai import Client, types
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
-# Imagen 3
-import vertexai
-from vertexai.preview.vision_models import ImageGenerationModel
 # import everything from tools.py
 from tools import *
 
@@ -53,7 +41,7 @@ formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(name)s - %(messag
 handler.setFormatter(formatter)
 console_handler.setFormatter(formatter)
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)  # Log everything
+logger.setLevel(logging.ERROR)  # Log errors only
 logger.addHandler(handler)
 logger.addHandler(console_handler)
 
@@ -695,7 +683,7 @@ async def handle_message(message):
                     if chunk.function_calls:
                         fn = chunk.function_calls[0]
                         current_response = full_response  # save text up to here
-
+                        print(fn) # debug
                         if fn.name == "python":
                             code_text = fn.args.get('code_text', '')
                             await bot_message.edit(content=f"-# Executing... <a:brackets:1300121114869235752>")
