@@ -616,11 +616,11 @@ async def handle_message(message):
                     try:
                         if i < len(message_chunks):
                             if message_chunks[i]:
-                                await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>", mention_author=mention_author)
                                 await asyncio.sleep(0.8)
                         else:
                             if i == 0 and bot_message:
-                                await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>", mention_author=mention_author)
                                 await asyncio.sleep(0.8)
                                 message_chunks.append(bot_message)
                             else:
@@ -635,7 +635,7 @@ async def handle_message(message):
                 for i in range(len(message_chunks)):
                     try:
                         if i < len(new_chunks) and message_chunks[i]:
-                            await message_chunks[i].edit(content=new_chunks[i])
+                            await message_chunks[i].edit(content=new_chunks[i], mention_author=mention_author)
                     except Exception as e:
                         print(f"Error finalizing message {i}: {e}")
                 return new_chunks
@@ -657,11 +657,11 @@ async def handle_message(message):
                             new_chunks[0] = new_chunks[0].replace("Language Model#3241:", "", 1)
                         for i in range(len(new_chunks)):
                             if i < len(message_chunks):
-                                await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>", mention_author=mention_author)
                                 await asyncio.sleep(0.8)
                             else:
                                 if i == 0:
-                                    await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                    await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>", mention_author=mention_author)
                                     await asyncio.sleep(0.8)
                                     message_chunks.append(bot_message)
                                 else:
@@ -675,10 +675,10 @@ async def handle_message(message):
                         print(fn) # debug
                         if fn.name == "python":
                             code_text = fn.args.get('code_text', '')
-                            await bot_message.edit(content=f"-# Executing... <a:brackets:1300121114869235752>")
+                            await bot_message.edit(content=f"-# Executing... <a:brackets:1300121114869235752>", mention_author=mention_author)
                             python_result = exec_python(code_text)
                             python_view = PythonResultView(result=code_text)
-                            await bot_message.edit(content=f"-# Done <a:brackets:1300121114869235752>", view=python_view)
+                            await bot_message.edit(content=f"-# Done <a:brackets:1300121114869235752>", view=python_view, mention_author=mention_author)
                             cleaned_result = clean_result(python_result)
                             function_response_part = types.Part.from_function_response(
                                 name="python",
@@ -687,11 +687,11 @@ async def handle_message(message):
                         elif fn.name == "browser":
                             q = fn.args.get('q', '')
                             num = fn.args.get('num', 15)
-                            await bot_message.edit(content=f'-# Searching \'{q}\' <a:searchingweb:1246248294322147489>')
+                            await bot_message.edit(content=f'-# Searching \'{q}\' <a:searchingweb:1246248294322147489>', mention_author=mention_author)
                             wsearch_result = await browser(q, num)
                             aggregated_wsearch_results += wsearch_result
                             web_view = WebSearchResultView(results=aggregated_wsearch_results)
-                            await bot_message.edit(content='-# Reading results... <a:searchingweb:1246248294322147489>', view=web_view)
+                            await bot_message.edit(content='-# Reading results... <a:searchingweb:1246248294322147489>', view=web_view, mention_author=mention_author)
                             function_response_part = types.Part.from_function_response(
                                 name="browser",
                                 response={"result": f"USE_CITATION=YES\nONLINE_RESULTS={wsearch_result}"}
@@ -699,16 +699,16 @@ async def handle_message(message):
                         elif fn.name == "imagine":
                             prompt = fn.args.get('prompt', '')
                             ar = fn.args.get('ar', '1:1')
-                            await bot_message.edit(content="-# Generating Image... <a:gemini_sparkles:1321895555676504077>")
+                            await bot_message.edit(content="-# Generating Image... <a:gemini_sparkles:1321895555676504077>", mention_author=mention_author)
                             imagine_result = await imagine(prompt, ar)
                             if imagine_result["is_error"] == 1:
-                                await bot_message.edit(content='-# An Error Occurred <:error_icon:1295348741058068631>')
+                                await bot_message.edit(content='-# An Error Occurred <:error_icon:1295348741058068631>', mention_author=mention_author)
                                 function_response_part = types.Part.from_function_response(
                                     name="imagine",
                                     response={"result": f"IMAGE_GENERATED=NO\nERROR_MSG=Error occurred: {imagine_result['img_error_msg']}"}
                                 )
                             else:
-                                await bot_message.edit(content="-# Done <:checkmark:1220809843414270102>")
+                                await bot_message.edit(content="-# Done <:checkmark:1220809843414270102>", mention_author=mention_author)
                                 await message.reply(file=discord.File(imagine_result["filename"]), mention_author=mention_author)
                                 os.remove(imagine_result["filename"])
                                 function_response_part = types.Part.from_function_response(
@@ -745,7 +745,7 @@ async def handle_message(message):
         if message_chunks:
             for i, msg in enumerate(message_chunks):
                 try:
-                    await msg.edit(content=split_msg(full_response)[i])
+                    await msg.edit(content=split_msg(full_response)[i], mention_author=mention_author)
                 except Exception as e:
                     print(f"Error finalizing message {i}: {e}")
     except Exception as e:
