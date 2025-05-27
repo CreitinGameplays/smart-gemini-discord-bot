@@ -366,7 +366,7 @@ async def handle_message(message):
     temperature_setting = 0.6 # default global value
     model_id = "gemini-2.5-flash-preview-05-20" # default global
     if user_settings:
-        model_id = user_settings.get("model_id", model_id)
+        model_id = user_settings.get("model")
         temperature_setting = user_settings.get("temperature", 0.6)
         print(f"User temp settings: {temperature_setting}") # debug
 
