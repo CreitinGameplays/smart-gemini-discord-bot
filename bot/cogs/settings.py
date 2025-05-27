@@ -64,6 +64,10 @@ class Settings(commands.Cog):
         "channel",
         "Manage channels that the bot should respond"
     )
+    change_model = settings.create_subgroup(
+        "model",
+        "Change the AI model used by the bot."
+    )
 
     @settings.command(name="open", description="Manage bot settings.")
     async def open(self, ctx: discord.ApplicationContext):
@@ -157,6 +161,26 @@ class Settings(commands.Cog):
         except Exception as e:
             await ctx.respond(f":x: An error occurred while listing channels: {e}", ephemeral=True)
             print(f"Error in listing channels: {e}")
+
+    # change model command
+    @settings.command(description="Change the AI model used by the bot.")
+    @option("model", description="Choose the model to use.", choices=["gemini-2.5-pro-preview-05-06", "gemini-2.5-flash-preview-05-20", "gemini-2.5-flash-preview-04-17", "gemini-2.0-flash"])
+    async def set(self, ctx: discord.ApplicationContext, model: str):
+        try:
+            user_settings = db.bot_settings.find_one({"user_id": ctx.author.id})
+            if model in ["gemini-2.5-pro-preview-05-06"] and not user_settings.get("is_donator", False):
+                await ctx.respond("ℹ This model is only available for donators.", ephemeral=True)
+                return
+            # Update the model in the database for this user id
+            db.bot_settings.update_one(
+                {"user_id": ctx.author.id},
+                {"$set": {"model": model}},
+                upsert=True
+            )
+            await ctx.respond(f"✅ AI model set to `{model}`.", ephemeral=True)
+        except Exception as e:
+            await ctx.respond(f":x: An error occurred while setting the model: {e}", ephemeral=True)
+            print(f"Error in change_model: {e}")
 
 def setup(bot):
     bot.add_cog(Settings(bot))
