@@ -10,7 +10,6 @@ if not uri:
 mongo_client = MongoClient(uri, server_api=ServerApi('1'))
 bot_owner_id = 775678427511783434 # creitin id xd
 
-
 async def setup_mongodb():
     try:
         # Check if the database exists

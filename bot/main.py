@@ -227,6 +227,7 @@ bot = discord.Client(intents=intents)
 
 # add cogs
 cogs_list = [
+    'settings',
 ]
 for cog in cogs_list:
     bot.load_extension(f'cogs.{cog}')
