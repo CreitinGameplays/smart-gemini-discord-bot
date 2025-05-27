@@ -52,8 +52,6 @@ SEARCH_SNIPPET_SIZE = 6000
 MAX_CHAT_HISTORY_MESSAGES = 24
 allowed_ids = [775678427511783434] # creitin id xd
 
-# model ID
-model_id = "gemini-2.5-flash-preview-05-20" # default
 image_model_id = "imagen-3.0-fast-generate-001"
 # Maintain last 10 attachments per type and per channel
 attachment_histories = defaultdict(lambda: {
@@ -311,11 +309,9 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    # gather database settings here #
+    # USER DATABASE SETTINGS
     allowed_channels = None
     server_settings = db.bot_settings.find_one({"server_id": message.guild.id})
-    if server_settings:
-        allowed_channels = server_settings.get("channels")
 
     channel_id = message.channel.id
     if message.author == bot.user:
@@ -369,7 +365,11 @@ async def handle_message(message):
     user_settings = db.bot_settings.find_one({"user_id": message.author.id})
     temperature_setting = 0.6 # default global value
     if user_settings:
-        #model_id = user_settings.get("model_id", model_id) #implement later
+        model_id = user_settings.get("model_id", model_id)
+        if model_id:
+            model_id = model_id.strip()
+        else:
+            model_id = "gemini-2.5-flash-preview-05-20" # default model
         temperature_setting = user_settings.get("temperature", 0.6)
         print(f"User temp settings: {temperature_setting}") # debug
     # so far ok
