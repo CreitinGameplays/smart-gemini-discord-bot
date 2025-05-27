@@ -13,11 +13,11 @@ bot_owner_id = 775678427511783434 # creitin id xd
 async def setup_mongodb():
     try:
         # Check if the database exists
-        db = mongo_client["gemini-bot"]
+        db = mongo_client["gemini-bot-db"]
         c_list = mongo_client.list_collections()
-        if 'gemini_bot' not in c_list:
-            print("Creating 'gemini_bot' database...")
-            await db.create_collection("gemini_bot")
+        if 'bot_settings' not in c_list:
+            print("Creating 'bot_settings' database...")
+            await db.create_collection("bot_settings")
         else:
             print("'gemini_bot' database already exists.")
     except Exception as e:
@@ -39,8 +39,8 @@ class Settings(commands.Cog):
                     await message.reply(":x: You do not have permission to use this command.")
                     return
                 else:
-                    await setup_mongodb()
-                    await message.reply(f"MongoDB setup done!")
+                    result = await setup_mongodb()
+                    await message.reply(f"MongoDB setup status: {result}")
             
         except Exception as e:
             await message.reply(f":x: An error occurred: {e}")
