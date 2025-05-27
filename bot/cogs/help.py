@@ -34,12 +34,8 @@ class Help(commands.Cog):
         message_latency_ms = round((end_time - start_time) * 1000)
 
         embed.add_field(name="Message Latency", value=f"{message_latency_ms} ms", inline=False)
-        
-        if self.bot.user and self.bot.user.avatar:
-            embed.set_footer(text=f"Requested by {ctx.author}", icon_url=self.bot.user.avatar.url)
-            embed.set_thumbnail(url=self.bot.user.avatar.url)
-        else:
-            embed.set_footer(text="Bot powered by Gemini")
+        embed.set_footer(text=f"Requested by {ctx.author}", icon_url=self.bot.user.avatar.url)
+        embed.set_thumbnail(url=self.bot.user.avatar.url)
 
         await ctx.edit_original_message(embed=embed)
 
