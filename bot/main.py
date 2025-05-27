@@ -310,6 +310,12 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
+    # gather database settings here #
+    allowed_channels = None
+    server_settings = db.bot_settings.find_one({"server_id": message.guild.id})
+    if server_settings:
+        allowed_channels = server_settings.get("channels")
+
     channel_id = message.channel.id
     if message.author == bot.user:
         return
@@ -350,8 +356,12 @@ Bot developed by Creitin Gameplays.
         except Exception as e:
             logger.error("An error occurred:\n" + traceback.format_exc())
             await message.reply(f":x: An error occurred: `{e}`")
+
     if bot.user in message.mentions or (message.reference and message.reference.resolved.author == bot.user):
-        await handle_message(message)
+        if message.channel.id in allowed_channels:
+            await handle_message(message)
+        else:
+            return
 
 async def handle_message(message):
     ### gather some database settings here ###
