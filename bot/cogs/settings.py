@@ -57,7 +57,7 @@ class Settings(commands.Cog):
         "Set the AI temperature value (0-2)."
     )
     @set_temperature.command(name="set_temperature", description="Set the AI temperature value (0-2).")
-    async def set_temperature(self, ctx: discord.ApplicationContext, value: int):
+    async def settemperature(self, ctx: discord.ApplicationContext, value: int):
         if value < 0 or value > 2:
             await ctx.respond(":x: Temperature must be between 0 and 2.", ephemeral=True)
             return
