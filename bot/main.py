@@ -65,7 +65,7 @@ SEARCH_SNIPPET_SIZE = 6000
 MAX_CHAT_HISTORY_MESSAGES = 24
 # model ID
 model_id = "gemini-2.5-flash-preview-05-20" # default
-
+image_model_id = "imagen-3.0-fast-generate-001"
 # Maintain last 10 attachments per type and per channel
 attachment_histories = defaultdict(lambda: {
     "image": deque(maxlen=10),
