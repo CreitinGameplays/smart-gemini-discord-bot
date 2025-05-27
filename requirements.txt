@@ -12,3 +12,4 @@ aiofiles
 vertexai
 pydub
 pymongo
+pymongo[srv]
