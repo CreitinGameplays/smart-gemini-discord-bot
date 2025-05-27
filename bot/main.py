@@ -356,11 +356,11 @@ Bot developed by Creitin Gameplays.
 async def handle_message(message):
     # gather some database settings here
     user_settings = db.bot_settings.find_one({"user_id": message.author.id})
+    temperature_setting = None
     if user_settings:
         #model_id = user_settings.get("model_id", model_id) #later
-        temperature = user_settings.get("temperature", 0.6)
+        temperature_setting = user_settings.get("temperature", 0.6)
         print(f"User temp settings: {temperature}") # debugs
-        logging.info(f"User temperature settings: {temperature}")
 
     bot_message = None
     today2 = datetime.datetime.now()
@@ -426,7 +426,7 @@ async def handle_message(message):
             tools=[tool_python, tool_websearch, tool_imagine],
             tool_config=tool_config,
             system_instruction=[
-                types.Part.from_text(text=base_system_prompt.replace("TODAYTIME00", todayday2))
+                types.Part.from_text(text=base_system_prompt.replace("TODAYTIME00", todayday2) + f"(DEBUG: temperature_setup={temperature_setting})")
             ]
         )
         chat_contents = []
