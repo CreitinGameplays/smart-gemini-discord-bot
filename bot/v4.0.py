@@ -25,6 +25,10 @@ import traceback
 import mimetypes
 from pydub import AudioSegment
 
+# MongoDB
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
+
 # Gemini SDK (new)
 from google.genai import Client, types
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
@@ -40,6 +44,13 @@ if not THE_CREDENTIALS:
 decoded_credentials = base64.b64decode(THE_CREDENTIALS).decode("utf-8")
 credentials_info = json.loads(decoded_credentials)
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
+
+# MongoDB setup
+MONGO_URI = os.getenv('MONGO_URI')
+mongo_client = MongoClient(uri, server_api=ServerApi('1'))
+
+# mongo db will be useful for stuff later
+# yes this bot will have more features
 
 # Logging
 handler = RotatingFileHandler(
