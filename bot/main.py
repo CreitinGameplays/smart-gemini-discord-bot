@@ -228,6 +228,7 @@ bot = discord.AutoShardedBot(intents=intents, shard_count=4)
 # add cogs
 cogs_list = [
     'settings',
+    'help'
 ]
 for cog in cogs_list:
     bot.load_extension(f'cogs.{cog}')

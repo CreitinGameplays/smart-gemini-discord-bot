@@ -99,7 +99,7 @@ class Settings(commands.Cog):
                     "- `/settings temperature set [value]` to adjust the AI temperature. This **controls the model randomness**: higher values yield more creative responses, while lower values produce more focused and deterministic results.\n"
                     "- `/settings model set [model]` to change Gemini model.\n"
                     "- `/settings mention mention [True/False]` to set your mention preference.\n"
-                    "- For managing allowed channels, use `/settings/channel add/remove/list`.\n"),
+                    "- For managing allowed channels, use `/settings channel add/remove/list`.\n"),
                 inline=False
             )
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
