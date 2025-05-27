@@ -131,7 +131,28 @@ class Settings(commands.Cog):
             await ctx.respond(":x: You do not have the required permissions to use this command.", ephemeral=True)
         else:
             raise error
-            
+
+    @channels_setting.command(description="Show a list of allowed channels in this server")
+    async def list(self, ctx):
+        try:
+            server_settings = db.bot_settings.find_one({"server_id": ctx.guild_id})
+            channels = server_settings.get("channels", []) if server_settings else []
+            if channels:
+                channel_mentions = ", ".join(f"<#{channel_id}>" for channel_id in channels)
+                description = f"{channel_mentions}"
+            else:
+                description = "No channels have been added yet."
+                
+            list_embed = discord.Embed(
+                title="List of allowed channels",
+                description=description,
+                color=discord.Colour.gold()
+            )
+            await ctx.respond(embed=list_embed)
+        except Exception as e:
+            await ctx.respond(f":x: An error occurred while listing channels: {e}", ephemeral=True)
+            print(f"Error in listing channels: {e}")
+
 def setup(bot):
     bot.add_cog(Settings(bot))
 
