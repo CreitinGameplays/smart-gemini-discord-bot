@@ -53,23 +53,24 @@ class Settings(commands.Cog):
     # group slash commands
     settings = discord.SlashCommandGroup("settings", "Manage bot settings.") 
 
-    @settings.command(name="set_temperature", description="Manage bot settings.")
+    @settings.command(name="set_temperature", description="Set the AI temperature value (0-2).")
     async def set_temperature(self, ctx: discord.ApplicationContext, value: int):
-        """
-        Change the AI temperature setting.
-        """
         value = int(value)
         if value < 0 or value > 2:
             await ctx.respond(":x: Temperature must be between 0 and 2.", ephemeral=True)
             return
-        # Update the temperature in the database for this user id
-        db.bot_settings.update_one(
-            {"user_id": ctx.author.id},
-            {"$set": {"temperature": value}},
-            upsert=True
-        )
-        await ctx.respond(f"✅ AI temperature set to {value}.", ephemeral=True)
-
+        try:
+            # Update the temperature in the database for this user id
+            db.bot_settings.update_one(
+                {"user_id": ctx.author.id},
+                {"$set": {"temperature": value}},
+                upsert=True
+            )
+            await ctx.respond(f"✅ AI temperature set to {value}.", ephemeral=True)
+        except Exception as e:
+            await ctx.respond(f":x: An error occurred while setting the temperature: {e}", ephemeral=True)
+            print(f"Error in set_temperature: {e}")
+            
 def setup(bot):
     bot.add_cog(Settings(bot))
 
