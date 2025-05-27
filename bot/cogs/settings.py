@@ -18,11 +18,14 @@ async def setup_mongodb():
         if 'bot_settings' not in c_list:
             print("Creating 'bot_settings' database...")
             await db.create_collection("bot_settings")
+            return "Database 'gemini_bot' created successfully."
         else:
             print("'gemini_bot' database already exists.")
+            return "Database 'gemini_bot' already exists."
     except Exception as e:
         print(f"Error setting up MongoDB: {e}")
-
+        return f"Error setting up MongoDB: {e}"
+        
 class Settings(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
