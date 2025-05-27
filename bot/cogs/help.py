@@ -34,7 +34,7 @@ class Help(commands.Cog):
         message_latency_ms = round((end_time - start_time) * 1000)
 
         embed.add_field(name="Message Latency", value=f"{message_latency_ms} ms", inline=False)
-        embed.set_footer(text=f"Requested by {ctx.author}", icon_url=self.bot.user.avatar.url)
+        embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.user.avatar.url)
         embed.set_thumbnail(url=self.bot.user.avatar.url)
 
         await ctx.edit(embed=embed)
