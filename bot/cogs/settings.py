@@ -181,6 +181,25 @@ class Settings(commands.Cog):
         except Exception as e:
             await ctx.respond(f":x: An error occurred while setting the model: {e}", ephemeral=True)
             print(f"Error in change_model: {e}")
+    
+    # command to set author mention preferences
+    @settings.command(name="mention", description="Set whether the bot should mention the author in responses.")
+    @option("mention", description="Choose whether to mention the author in responses (aka ping).", choices=[True, False])
+    async def mention(self, ctx: discord.ApplicationContext, mention: bool):
+        try:
+            # Update the mention preference in the database for this user id
+            db.bot_settings.update_one(
+                {"user_id": ctx.author.id},
+                {"$set": {"mention_author": mention}},
+                upsert=True
+            )
+            if mention:
+                await ctx.respond("<a:verificadoTESTE:799380003426795561> The bot will now mention you in responses.", ephemeral=True)
+            else:
+                await ctx.respond("<a:verificadoTESTE:799380003426795561> The bot will no longer mention you in responses.", ephemeral=True)
+        except Exception as e:
+            await ctx.respond(f":x: An error occurred while setting the mention preference: {e}", ephemeral=True)
+            print(f"Error in mention command: {e}")
 
 def setup(bot):
     bot.add_cog(Settings(bot))

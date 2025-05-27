@@ -361,16 +361,19 @@ Bot developed by Creitin Gameplays.
             return
 
 async def handle_message(message):
-    ### USER DATABASE SETTINGS ###
+    ### USER DATABASE SETTINGS (default values) ###
+    temperature_setting = 0.6
+    model_id = "gemini-2.5-flash-preview-05-20"
+    mention_author = True
+
     user_settings = db.bot_settings.find_one({"user_id": message.author.id})
-    temperature_setting = 0.6 # default global value
-    model_id = "gemini-2.5-flash-preview-05-20" # default global
     if user_settings:
         model_id = user_settings.get("model", model_id)
         temperature_setting = user_settings.get("temperature", 0.6)
-        print(f"User temp settings: {temperature_setting}") # debug
+        mention_author = user_settings.get("mention_author", True)
+        mention_author = bool(mention_author)  # Ensure it's a boolean
 
-    # so far ok
+    # Rest of the logic #
     bot_message = None
     today2 = datetime.datetime.now()
     todayday2 = f'{today2.strftime("%A")}, {today2.month}/{today2.day}/{today2.year}'
@@ -621,7 +624,7 @@ async def handle_message(message):
                                 await asyncio.sleep(0.8)
                                 message_chunks.append(bot_message)
                             else:
-                                new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>", mention_author=mention_author)
                                 await asyncio.sleep(0.8)
                                 message_chunks.append(new_msg)
                     except Exception as e:
@@ -662,7 +665,7 @@ async def handle_message(message):
                                     await asyncio.sleep(0.8)
                                     message_chunks.append(bot_message)
                                 else:
-                                    new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                    new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>", mention_author=mention_author)
                                     await asyncio.sleep(0.8)
                                     message_chunks.append(new_msg)
 
