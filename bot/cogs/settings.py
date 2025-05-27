@@ -91,19 +91,21 @@ class Settings(commands.Cog):
                 color=discord.Colour.blue()
             )
             embed.add_field(name="Temperature", value=f"`{temperature}`", inline=True)
-            embed.add_field(name="AI Model", value=f"`{model}`", inline=True)
+            embed.add_field(name="Gemini Model", value=f"`{model}`", inline=True)
             embed.add_field(name="Mention Preference", value=f"`{'Yes' if mention_author else 'No'}`", inline=True)
             embed.add_field(
                 name="Next Steps",
                 value=("To change any of these settings, use the following subcommands:\n"
-                    "- `/settings/temperature set [value]` to adjust the AI temperature. This **controls the model randomness**: higher values yield more creative responses, while lower values produce more focused and deterministic results.\n"
-                    "- `/settings/model set [model]` to change the AI model.\n"
-                    "- `/settings/mention mention [True/False]` to set your mention preference.\n"
+                    "- `/settings temperature set [value]` to adjust the AI temperature. This **controls the model randomness**: higher values yield more creative responses, while lower values produce more focused and deterministic results.\n"
+                    "- `/settings model set [model]` to change Gemini model.\n"
+                    "- `/settings mention mention [True/False]` to set your mention preference.\n"
                     "- For managing allowed channels, use `/settings/channel add/remove/list`.\n"),
                 inline=False
             )
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             embed.set_footer(text=f"Requested by {ctx.author.name} on {current_time}")
+            embed.set_thumbnail(url=bot.user.avatar.url)
+            
             await ctx.respond(embed=embed, ephemeral=True)
         except Exception as e:
             await ctx.respond(f":x: An error occurred while retrieving your settings: {e}", ephemeral=True)
