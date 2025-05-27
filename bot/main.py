@@ -387,7 +387,7 @@ async def handle_message(message):
 
         async with message.channel.typing():
             await asyncio.sleep(1)
-            bot_message = await message.reply('<a:gemini_sparkles:1321895555676504077> _ _')
+            bot_message = await message.reply('<a:gemini_sparkles:1321895555676504077> _ _', mention_author=mention_author)
             await asyncio.sleep(0.1)
         user_message = message.content.replace(f'<@{bot.user.id}>', '').strip()
 
@@ -709,7 +709,7 @@ async def handle_message(message):
                                 )
                             else:
                                 await bot_message.edit(content="-# Done <:checkmark:1220809843414270102>")
-                                await message.reply(file=discord.File(imagine_result["filename"]))
+                                await message.reply(file=discord.File(imagine_result["filename"]), mention_author=mention_author)
                                 os.remove(imagine_result["filename"])
                                 function_response_part = types.Part.from_function_response(
                                     name="imagine",
