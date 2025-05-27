@@ -119,7 +119,7 @@ WEB SEARCH RULES:
 6. To provide the most accurate answer, call the `browser` tool AT LEAST 2 or 3 times in a row, if the first search result is not enough to answer the question accurately.
 7. DO NOT ask permission to search online, just do it!
 When using `browser` tool in your responses, you MUST USE CITATION, in hyperlink format. Ensure you provide a citation for each paragraph that uses information from a web search.
-To search specific websites or domains, use "site:<website-domain>" in your query!
+To search specific websites or domains, use "site:<website-url>" in your query.
 Citation Usage Example:
 - User: "What is the capital of France?"
 - You: "The capital of France is Paris. [1](https://en.wikipedia.org/wiki/Paris). Paris is not only the capital of France but also its largest city. It is located in the north-central part of the country. [2](https://en.wikipedia.org/wiki/Paris)."
