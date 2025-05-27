@@ -3,7 +3,7 @@
 # Function to run the bot script
 run_bot() {
     while true; do
-        python v3.5.py 
+        python main.py 
         if [ $? -eq 1 ]; then
             echo "Bot script exited with error. Restarting..."
             break
