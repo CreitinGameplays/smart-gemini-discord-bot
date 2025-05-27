@@ -303,15 +303,14 @@ def clean_result(result):
 # Discord events and message handler
 @bot.event
 async def on_ready():
+    if bot.auto_sync_commands:
+        await bot.sync_commands() # if we want slash commands
     msg = discord.Game("Made by Creitin Gameplays! 🌟")
     await bot.change_presence(status=discord.Status.online, activity=msg)
     print(f'Logged in as {bot.user}!')
 
 @bot.event
 async def on_message(message):
-    """
-    TODO: turn then into cog slash commands
-    """
     channel_id = message.channel.id
     if message.author == bot.user:
         return
@@ -335,6 +334,7 @@ async def on_message(message):
             unauthorized = await message.reply(":x: You don't have permissions to run this command.")
             await asyncio.sleep(5)
             await unauthorized.delete()
+    # help command gonna be moved to a cog later
     if message.content.startswith('!h'):
         try:
             helpcmd = f"""

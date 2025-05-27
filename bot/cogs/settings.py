@@ -34,6 +34,7 @@ class Settings(commands.Cog):
     """
     @commands.Cog.listener()
     async def on_message(self, message):
+        # owner only command obv
         if message.author.bot:
             return
         try:
@@ -49,6 +50,10 @@ class Settings(commands.Cog):
             await message.reply(f":x: An error occurred: {e}")
             print(f"Error in on_message: {e}")
 
+    @discord.slash_command(name="settings", description="Manage bot settings.")
+    async def settings(self, ctx):
+        return
+
 def setup(bot):
     bot.add_cog(Settings(bot))
 
@@ -56,4 +61,4 @@ def setup(bot):
 # - change AI temperature
 # - change AI model
 # - Either if the bot should mention author or not
-# - idk more
+# - Allowed channels ID for the bot to respond in
