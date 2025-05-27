@@ -52,10 +52,12 @@ class Settings(commands.Cog):
 
     # group slash commands
     settings = discord.SlashCommandGroup("settings", "Manage bot settings.") 
-
-    @settings.command(name="set_temperature", description="Set the AI temperature value (0-2).")
+    set_temperature = settings.create_subgroup(
+        "set_temperature",
+        "Set the AI temperature value (0-2)."
+    )
+    @set_temperature.command(name="set_temperature", description="Set the AI temperature value (0-2).")
     async def set_temperature(self, ctx: discord.ApplicationContext, value: int):
-        value = int(value)
         if value < 0 or value > 2:
             await ctx.respond(":x: Temperature must be between 0 and 2.", ephemeral=True)
             return
@@ -70,7 +72,7 @@ class Settings(commands.Cog):
         except Exception as e:
             await ctx.respond(f":x: An error occurred while setting the temperature: {e}", ephemeral=True)
             print(f"Error in set_temperature: {e}")
-            
+
 def setup(bot):
     bot.add_cog(Settings(bot))
 
