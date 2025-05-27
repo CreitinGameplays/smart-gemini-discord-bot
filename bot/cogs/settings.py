@@ -53,7 +53,7 @@ class Settings(commands.Cog):
     # group command
     settings = discord.SlashCommandGroup("settings", "Manage bot settings.") 
 
-    @settings.slash_command(name="settings", description="Manage bot settings.")
+    @settings.command(name="settings", description="Manage bot settings.")
     async def set_temperature(self, ctx: discord.ApplicationContext, value: int):
         """
         Change the AI temperature setting.
