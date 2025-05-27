@@ -361,7 +361,7 @@ Bot developed by Creitin Gameplays.
             return
 
 async def handle_message(message):
-    ### gather some database settings here ###
+    ### USER DATABASE SETTINGS ###
     user_settings = db.bot_settings.find_one({"user_id": message.author.id})
     temperature_setting = 0.6 # default global value
     model_id = "gemini-2.5-flash-preview-05-20" # default global
@@ -369,6 +369,7 @@ async def handle_message(message):
         model_id = user_settings.get("model_id", model_id)
         temperature_setting = user_settings.get("temperature", 0.6)
         print(f"User temp settings: {temperature_setting}") # debug
+        
     # so far ok
     bot_message = None
     today2 = datetime.datetime.now()
