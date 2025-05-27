@@ -354,14 +354,14 @@ Bot developed by Creitin Gameplays.
         await handle_message(message)
 
 async def handle_message(message):
-    # gather some database settings here
+    ### gather some database settings here ###
     user_settings = db.bot_settings.find_one({"user_id": message.author.id})
-    temperature_setting = None
+    temperature_setting = 0.6 # default global value
     if user_settings:
-        #model_id = user_settings.get("model_id", model_id) #later
+        #model_id = user_settings.get("model_id", model_id) #implement later
         temperature_setting = user_settings.get("temperature", 0.6)
-        print(f"User temp settings: {temperature_setting}") # debugs
-
+        print(f"User temp settings: {temperature_setting}") # debug
+    # so far ok
     bot_message = None
     today2 = datetime.datetime.now()
     todayday2 = f'{today2.strftime("%A")}, {today2.month}/{today2.day}/{today2.year}'
@@ -418,7 +418,7 @@ async def handle_message(message):
             )
         )
         config = types.GenerateContentConfig(
-            temperature=0.6,
+            temperature=temperature_setting,
             top_p=0.95,
             top_k=40,
             max_output_tokens=8192,
@@ -426,7 +426,7 @@ async def handle_message(message):
             tools=[tool_python, tool_websearch, tool_imagine],
             tool_config=tool_config,
             system_instruction=[
-                types.Part.from_text(text=base_system_prompt.replace("TODAYTIME00", todayday2) + f"(DEBUG: temperature_setup={temperature_setting})")
+                types.Part.from_text(text=base_system_prompt.replace("TODAYTIME00", todayday2))
             ]
         )
         chat_contents = []
