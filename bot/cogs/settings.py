@@ -192,7 +192,7 @@ class Settings(commands.Cog):
                 description=description,
                 color=discord.Colour.gold()
             )
-
+            list_embed.set_thumbnail(url=self.bot.user.avatar.url)
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             list_embed.set_footer(text=f"Requested by {ctx.author.name} on {current_time}")
             await ctx.respond(embed=list_embed)
