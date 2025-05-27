@@ -231,7 +231,12 @@ class PythonResultView(discord.ui.View):
         self.result = result
     @discord.ui.button(label="Show Code", style=discord.ButtonStyle.grey, emoji="⚙️")
     async def button_callback(self, button, interaction):
-        await interaction.response.send_message(f"```python\n{self.result}\n```", ephemeral=True)
+        code_embed = discord.Embed(
+            title="Python Code",
+            description=f"```python\n{self.result}\n```",
+            color=discord.Color.blue()
+        )
+        await interaction.response.send_message(embed=code_embed, ephemeral=True)
 
 class WebSearchResultView(discord.ui.View):
     def __init__(self, results):
@@ -242,9 +247,14 @@ class WebSearchResultView(discord.ui.View):
         import re
         urls = re.findall(r'Link:\s*(\S+)', self.results)
         output = "\n".join(urls)
-        if len(output) > 2000:
-            output = output[:1900] + "..."
-        await interaction.response.send_message(f"Sources:\n```{output}```", ephemeral=True)
+        if len(output) > 4090:
+            output = output[:4000] + "..."
+        sources_embed = discord.Embed(
+            title="Sources",
+            description=f"{output}",
+            color=discord.Color.pink()
+        )
+        await interaction.response.send_message(embed=sources_embed, ephemeral=True)
 
 def extract_youtube_url(text):
     if not text:
