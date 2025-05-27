@@ -65,7 +65,7 @@ class Settings(commands.Cog):
         "Manage channels that the bot should respond"
     )
 
-    @settings.command(name="info", description="Manage bot settings.")
+    @settings.command(name="open", description="Manage bot settings.")
     async def open(self, ctx: discord.ApplicationContext):
         await ctx.respond("Use one of the subcommands to manage bot settings.", ephemeral=True)
 
