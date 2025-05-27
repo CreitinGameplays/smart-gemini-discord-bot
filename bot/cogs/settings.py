@@ -53,7 +53,7 @@ class Settings(commands.Cog):
     # group slash commands
     settings = discord.SlashCommandGroup("settings", "Manage bot settings.") 
     set_temperature = settings.create_subgroup(
-        "set_temperature",
+        "temperature",
         "Set the AI temperature value (0-2)."
     )
 
@@ -62,7 +62,7 @@ class Settings(commands.Cog):
         await ctx.respond("Use one of the subcommands to manage bot settings.", ephemeral=True)
 
     @set_temperature.command()
-    async def set_temperature(self, ctx: discord.ApplicationContext, value: int):
+    async def set(self, ctx: discord.ApplicationContext, value: int):
         if value < 0 or value > 2:
             await ctx.respond(":x: Temperature must be between 0 and 2.", ephemeral=True)
             return
