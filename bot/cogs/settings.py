@@ -16,12 +16,12 @@ async def setup_mongodb():
         db = mongo_client["gemini-bot-db"]
         c_list = db.list_collections()
         if 'bot_settings' not in c_list:
-            print("Creating 'bot_settings' database...")
+            print("Creating database...")
             db.create_collection("bot_settings")
-            return "Database 'gemini_bot' created successfully."
+            return "Database and collection created successfully."
         else:
-            print("'gemini_bot' database already exists.")
-            return "Database 'gemini_bot' already exists."
+            print("Database already exists.")
+            return "Database already exists."
     except Exception as e:
         print(f"Error setting up MongoDB: {e}")
         return f"Error setting up MongoDB: {e}"
