@@ -61,8 +61,8 @@ class Settings(commands.Cog):
     async def info(self, ctx: discord.ApplicationContext):
         await ctx.respond("Use one of the subcommands to manage bot settings.", ephemeral=True)
 
-    @set_temperature.command()
-    async def settemperature(self, ctx: discord.ApplicationContext, value: int):
+    @settings.command()
+    async def set_temperature(self, ctx: discord.ApplicationContext, value: int):
         if value < 0 or value > 2:
             await ctx.respond(":x: Temperature must be between 0 and 2.", ephemeral=True)
             return
