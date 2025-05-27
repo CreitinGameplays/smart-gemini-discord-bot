@@ -104,8 +104,8 @@ class Settings(commands.Cog):
             )
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             embed.set_footer(text=f"Requested by {ctx.author.name} on {current_time}")
-            embed.set_thumbnail(url=bot.user.avatar.url)
-            
+            embed.set_thumbnail(url=self.bot.user.avatar.url)
+
             await ctx.respond(embed=embed, ephemeral=True)
         except Exception as e:
             await ctx.respond(f":x: An error occurred while retrieving your settings: {e}", ephemeral=True)
