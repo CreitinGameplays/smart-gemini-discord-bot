@@ -234,7 +234,7 @@ class PythonResultView(discord.ui.View):
         code_embed = discord.Embed(
             title="Python Code",
             description=f"```python\n{self.result}\n```",
-            color=discord.Color.blue()
+            color=discord.Colour.blue()
         )
         await interaction.response.send_message(embed=code_embed, ephemeral=True)
 
@@ -252,7 +252,7 @@ class WebSearchResultView(discord.ui.View):
         sources_embed = discord.Embed(
             title="Sources",
             description=f"{output}",
-            color=discord.Color.pink()
+            color=discord.Colour.nitro_pink()
         )
         await interaction.response.send_message(embed=sources_embed, ephemeral=True)
 
