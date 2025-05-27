@@ -86,7 +86,7 @@ class Settings(commands.Cog):
     
     @channels_setting.command(description="Add one or more channels to the bot to respond")
     @commands.has_permissions(manage_guild=True)
-    async def add(self, ctx: discord.ApplicationContext, channels: commands.Greedy[discord.TextChannel]):
+    async def add(self, ctx: discord.ApplicationContext, channels: list[discord.TextChannel]):
         if not channels:
             await ctx.respond(":x: You must provide at least one channel.", ephemeral=True)
             return
@@ -97,14 +97,14 @@ class Settings(commands.Cog):
                 {"$addToSet": {"channels": {"$each": channel_ids}}},
                 upsert=True
             )
-            # If a document already existed and no channels were modified
+            # If a document existed and no new channels were added
             if result.modified_count == 0 and result.upserted_id is None:
                 await ctx.respond(":x: The provided channel(s) are already added.", ephemeral=True)
                 return
             await ctx.respond("✅ Channels added: " + ", ".join(f"<#{cid}>" for cid in channel_ids), ephemeral=True)
         except Exception as e:
             await ctx.respond(f":x: An error occurred while adding the channel(s): {e}", ephemeral=True)
-            print(f"Error in channels_setting: {e}")
+            print(f"Error in channels_setting add: {e}")
 
     @add.error
     async def add_error(self, ctx: discord.ApplicationContext, error):
@@ -115,7 +115,7 @@ class Settings(commands.Cog):
 
     @channels_setting.command(description="Remove one or more channels from the bot's allowed channels")
     @commands.has_permissions(manage_guild=True)
-    async def remove(self, ctx: discord.ApplicationContext, channels: commands.Greedy[discord.TextChannel]):
+    async def remove(self, ctx: discord.ApplicationContext, channels: list[discord.TextChannel]):
         if not channels:
             await ctx.respond(":x: You must provide at least one channel to remove.", ephemeral=True)
             return
@@ -140,7 +140,7 @@ class Settings(commands.Cog):
             await ctx.respond(":x: You do not have the required permissions to use this command!", ephemeral=True)
         else:
             await ctx.respond(f":x: An error occurred: {error}", ephemeral=True)
-            
+
 def setup(bot):
     bot.add_cog(Settings(bot))
 
