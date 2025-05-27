@@ -223,7 +223,8 @@ channel_histories = defaultdict(lambda: deque(maxlen=MAX_CHAT_HISTORY_MESSAGES))
 intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
-bot = discord.Client(intents=intents)
+
+bot = discord.AutoShardedBot(intents=intents, shard_count=4)
 
 # add cogs
 cogs_list = [
