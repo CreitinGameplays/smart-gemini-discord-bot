@@ -236,6 +236,7 @@ class PythonResultView(discord.ui.View):
             description=f"```python\n{self.result}\n```",
             color=discord.Colour.blue()
         )
+        code_embed.set_thumbnail(url="https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg")
         await interaction.response.send_message(embed=code_embed, ephemeral=True)
 
 class WebSearchResultView(discord.ui.View):
@@ -254,6 +255,7 @@ class WebSearchResultView(discord.ui.View):
             description=f"{output}",
             color=discord.Colour.nitro_pink()
         )
+        sources_embed.set_thumbnail(url="https://cdn.revoltusercontent.com/attachments/_3Mg5mRzKc8fLNyxAjzoTqdPzdB2HS4molUCX75Fh2/pngegg.png")
         await interaction.response.send_message(embed=sources_embed, ephemeral=True)
 
 def extract_youtube_url(text):
