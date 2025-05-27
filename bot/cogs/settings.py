@@ -76,7 +76,7 @@ class Settings(commands.Cog):
     @set_temperature.command(description="Set the AI temperature value (0-2).")
     async def set(self, ctx: discord.ApplicationContext, value: float):
         if value < 0 or value > 2:
-            await ctx.respond(":x: Temperature must be between 0 and 2.", ephemeral=True)
+            await ctx.respond(":x: `temperature` value must be a float between 0 and 2.", ephemeral=True)
             return
         try:
             # Update the temperature in the database for this user id
@@ -85,7 +85,7 @@ class Settings(commands.Cog):
                 {"$set": {"temperature": value}},
                 upsert=True
             )
-            await ctx.respond(f"✅ AI temperature set to {value}.", ephemeral=True)
+            await ctx.respond(f"<a:verificadoTESTE:799380003426795561> Model `temperature` set to {value}.", ephemeral=True)
         except Exception as e:
             await ctx.respond(f":x: An error occurred while setting the temperature: {e}", ephemeral=True)
             print(f"Error in set_temperature: {e}")
@@ -103,7 +103,7 @@ class Settings(commands.Cog):
             if result.modified_count == 0 and result.upserted_id is None:
                 await ctx.respond(":warning: This channel has already been added.", ephemeral=True)
             else:
-                await ctx.respond(f"✅ <#{channel.id}> has been **added!**", ephemeral=True)
+                await ctx.respond(f"<a:verificadoTESTE:799380003426795561> <#{channel.id}> has been **added!**", ephemeral=True)
         except Exception as e:
             await ctx.respond(f":x: An error occurred while adding the channel: {e}", ephemeral=True)
             print(f"Error in channels_setting: {e}")
@@ -126,7 +126,7 @@ class Settings(commands.Cog):
             if result.modified_count == 0:
                 await ctx.respond(":warning: This channel was not found in the list.", ephemeral=True)
             else:
-                await ctx.respond(f"✅ <#{channel.id}> has been **removed!**", ephemeral=True)
+                await ctx.respond(f"<a:verificadoTESTE:799380003426795561> <#{channel.id}> has been **removed!**", ephemeral=True)
         except Exception as e:
             await ctx.respond(f":x: An error occurred while removing the channel: {e}", ephemeral=True)
             print(f"Error in channels_setting remove: {e}")
@@ -163,13 +163,13 @@ class Settings(commands.Cog):
             print(f"Error in listing channels: {e}")
 
     # change model command
-    @settings.command(description="Change the AI model used by the bot.")
+    @change_model.command(description="Change the AI model used by the bot.")
     @option("model", description="Choose the model to use.", choices=["gemini-2.5-pro-preview-05-06", "gemini-2.5-flash-preview-05-20", "gemini-2.5-flash-preview-04-17", "gemini-2.0-flash"])
     async def set(self, ctx: discord.ApplicationContext, model: str):
         try:
             user_settings = db.bot_settings.find_one({"user_id": ctx.author.id})
             if model in ["gemini-2.5-pro-preview-05-06"] and not user_settings.get("is_donator", False):
-                await ctx.respond("ℹ This model is only available for donators.", ephemeral=True)
+                await ctx.respond("<:info:1220157026739552296> This model is only available for donators.", ephemeral=True)
                 return
             # Update the model in the database for this user id
             db.bot_settings.update_one(
@@ -177,7 +177,7 @@ class Settings(commands.Cog):
                 {"$set": {"model": model}},
                 upsert=True
             )
-            await ctx.respond(f"✅ AI model set to `{model}`.", ephemeral=True)
+            await ctx.respond(f"<a:verificadoTESTE:799380003426795561> AI model set to `{model}`.", ephemeral=True)
         except Exception as e:
             await ctx.respond(f":x: An error occurred while setting the model: {e}", ephemeral=True)
             print(f"Error in change_model: {e}")
