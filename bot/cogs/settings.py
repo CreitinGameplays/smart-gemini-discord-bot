@@ -14,7 +14,7 @@ async def setup_mongodb():
     try:
         # Check if the database exists
         db = mongo_client["gemini-bot-db"]
-        c_list = mongo_client.list_collections()
+        c_list = await db.list_collections()
         if 'bot_settings' not in c_list:
             print("Creating 'bot_settings' database...")
             await db.create_collection("bot_settings")
@@ -25,7 +25,7 @@ async def setup_mongodb():
     except Exception as e:
         print(f"Error setting up MongoDB: {e}")
         return f"Error setting up MongoDB: {e}"
-        
+
 class Settings(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
