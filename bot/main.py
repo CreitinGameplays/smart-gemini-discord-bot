@@ -309,9 +309,9 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    # USER DATABASE SETTINGS
-    allowed_channels = None
+    # DATABASE SETTINGS
     server_settings = db.bot_settings.find_one({"server_id": message.guild.id})
+    allowed_channels = server_settings.get("channels", []) if server_settings else []
 
     channel_id = message.channel.id
     if message.author == bot.user:
