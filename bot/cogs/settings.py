@@ -96,7 +96,7 @@ class Settings(commands.Cog):
             embed.add_field(
                 name="Next Steps",
                 value=("To change any of these settings, use the following subcommands:\n"
-                    "- `/settings/temperature set [value]` to adjust the AI temperature. This **controls the model randomness**: higher values yield more creative responses, while lower values produce more focused and deterministic results.\n
+                    "- `/settings/temperature set [value]` to adjust the AI temperature. This **controls the model randomness**: higher values yield more creative responses, while lower values produce more focused and deterministic results.\n"
                     "- `/settings/model set [model]` to change the AI model.\n"
                     "- `/settings/mention mention [True/False]` to set your mention preference.\n"
                     "- For managing allowed channels, use `/settings/channel add/remove/list`.\n"),
