@@ -47,7 +47,7 @@ credentials = service_account.Credentials.from_service_account_info(credentials_
 
 # MongoDB setup
 MONGO_URI = os.getenv('MONGO_URI')
-mongo_client = MongoClient(uri, server_api=ServerApi('1'))
+mongo_client = MongoClient(MONGO_URI, server_api=ServerApi('1'))
 
 # mongo db will be useful for stuff later
 # yes this bot will have more features
