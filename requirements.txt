@@ -11,3 +11,4 @@ pillow
 aiofiles
 vertexai
 pydub
+pymongo
