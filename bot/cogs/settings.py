@@ -50,10 +50,10 @@ class Settings(commands.Cog):
             await message.reply(f":x: An error occurred: {e}")
             print(f"Error in on_message: {e}")
 
-    # group command
+    # group slash commands
     settings = discord.SlashCommandGroup("settings", "Manage bot settings.") 
 
-    @settings.command(name="settings", description="Manage bot settings.")
+    @settings.command(name="set_temperature", description="Manage bot settings.")
     async def set_temperature(self, ctx: discord.ApplicationContext, value: int):
         """
         Change the AI temperature setting.
