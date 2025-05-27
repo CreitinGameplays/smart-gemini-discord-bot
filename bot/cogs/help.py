@@ -37,7 +37,7 @@ class Help(commands.Cog):
         embed.set_footer(text=f"Requested by {ctx.author}", icon_url=self.bot.user.avatar.url)
         embed.set_thumbnail(url=self.bot.user.avatar.url)
 
-        await ctx.edit_original_message(embed=embed)
+        await ctx.edit(embed=embed)
 
 def setup(bot):
     bot.add_cog(Help(bot))
