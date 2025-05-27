@@ -360,7 +360,7 @@ async def handle_message(message):
     if user_settings:
         #model_id = user_settings.get("model_id", model_id) #later
         temperature_setting = user_settings.get("temperature", 0.6)
-        print(f"User temp settings: {temperature}") # debugs
+        print(f"User temp settings: {temperature_setting}") # debugs
 
     bot_message = None
     today2 = datetime.datetime.now()
