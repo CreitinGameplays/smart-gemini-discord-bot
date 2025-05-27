@@ -60,7 +60,7 @@ class Settings(commands.Cog):
     )
     channels_setting = settings.create_subgroup(
         "channel",
-        "channels that the bot should respond"
+        "Manage channels that the bot should respond"
     )
 
     @settings.command(name="info", description="Displays bot settings information.")
@@ -113,6 +113,34 @@ class Settings(commands.Cog):
         else:
             await ctx.respond(f":x: An error occurred: {error}", ephemeral=True)
 
+    @channels_setting.command(description="Remove one or more channels from the bot's allowed channels")
+    @commands.has_permissions(manage_guild=True)
+    async def remove(self, ctx: discord.ApplicationContext, channels: commands.Greedy[discord.TextChannel]):
+        if not channels:
+            await ctx.respond(":x: You must provide at least one channel to remove.", ephemeral=True)
+            return
+        channel_ids = [channel.id for channel in channels]
+        try:
+            result = db.bot_settings.update_one(
+                {"server_id": ctx.guild_id},
+                {"$pull": {"channels": {"$in": channel_ids}}}
+            )
+            # If no channels were removed
+            if result.modified_count == 0:
+                await ctx.respond(":x: The provided channel(s) were not found or already removed.", ephemeral=True)
+                return
+            await ctx.respond("✅ Channels removed: " + ", ".join(f"<#{cid}>" for cid in channel_ids), ephemeral=True)
+        except Exception as e:
+            await ctx.respond(f":x: An error occurred while removing the channel(s): {e}", ephemeral=True)
+            print(f"Error in channels_setting remove: {e}")
+
+    @remove.error
+    async def remove_error(self, ctx: discord.ApplicationContext, error):
+        if isinstance(error, commands.MissingPermissions):
+            await ctx.respond(":x: You do not have the required permissions to use this command!", ephemeral=True)
+        else:
+            await ctx.respond(f":x: An error occurred: {error}", ephemeral=True)
+            
 def setup(bot):
     bot.add_cog(Settings(bot))
 
