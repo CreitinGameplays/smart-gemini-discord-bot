@@ -364,12 +364,9 @@ async def handle_message(message):
     ### gather some database settings here ###
     user_settings = db.bot_settings.find_one({"user_id": message.author.id})
     temperature_setting = 0.6 # default global value
+    model_id = "gemini-2.5-flash-preview-05-20" # default global
     if user_settings:
         model_id = user_settings.get("model_id", model_id)
-        if model_id:
-            model_id = model_id.strip()
-        else:
-            model_id = "gemini-2.5-flash-preview-05-20" # default model
         temperature_setting = user_settings.get("temperature", 0.6)
         print(f"User temp settings: {temperature_setting}") # debug
     # so far ok
