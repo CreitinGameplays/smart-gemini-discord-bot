@@ -9,11 +9,11 @@ if not uri:
     raise ValueError("MONGO_URI environment variable is not set.")
 mongo_client = MongoClient(uri, server_api=ServerApi('1'))
 bot_owner_id = 775678427511783434 # creitin id xd
+db = mongo_client["gemini-bot-db"]
 
 async def setup_mongodb():
     try:
         # Check if the database exists
-        db = mongo_client["gemini-bot-db"]
         c_list = db.list_collections()
         if 'bot_settings' not in c_list:
             print("Creating database...")
@@ -50,9 +50,25 @@ class Settings(commands.Cog):
             await message.reply(f":x: An error occurred: {e}")
             print(f"Error in on_message: {e}")
 
-    @discord.slash_command(name="settings", description="Manage bot settings.")
-    async def settings(self, ctx):
-        return
+    # group command
+    settings = discord.SlashCommandGroup("settings", "Manage bot settings.") 
+
+    @settings.slash_command(name="settings", description="Manage bot settings.")
+    async def set_temperature(self, ctx: discord.ApplicationContext, value: int):
+        """
+        Change the AI temperature setting.
+        """
+        value = int(value)
+        if value < 0 or value > 2:
+            await ctx.respond(":x: Temperature must be between 0 and 2.", ephemeral=True)
+            return
+        # Update the temperature in the database for this user id
+        db.bot_settings.update_one(
+            {"user_id": ctx.author.id},
+            {"$set": {"temperature": value}},
+            upsert=True
+        )
+        await ctx.respond(f"✅ AI temperature set to {value}.", ephemeral=True)
 
 def setup(bot):
     bot.add_cog(Settings(bot))
