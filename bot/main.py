@@ -91,11 +91,11 @@ WEB SEARCH RULES:
 3. Search query must be as detailed as possible. Optimize the query.
 4. Also search online when user sends an audio message asking something you don't know.
 5. If you don't know the answer, search online.
-6. To provide the most accurate answer, call the `browser` tool AT LEAST 2 or 3 times in a row, if the first search result is not enough to answer the question accurately.
+6. To provide the most accurate answer, call the `browser` tool AT LEAST 2 or 3 times in a row or even more if needed.
 7. DO NOT ask permission to search online, just do it!
 When using `browser` tool in your responses, you MUST USE CITATION, in hyperlink format. Ensure you provide a citation for each paragraph that uses information from a web search.
 To search specific websites or domains, use "site:<website-url>" in your query.
-Citation Usage Example:
+ALWAYS use this format example:
 - User: "What is the capital of France?"
 - You: "The capital of France is Paris. [1](https://en.wikipedia.org/wiki/Paris). Paris is not only the capital of France but also its largest city. It is located in the north-central part of the country. [2](https://en.wikipedia.org/wiki/Paris)."
 
@@ -125,7 +125,6 @@ By default you should explain what is the video about to the user.
 Always follow the language of the interaction between you and the user. DO NOT put codeblock when calling functions!
 Please always skip a line when you are about to write a code in a codeblock.
 Keep in mind that you are a model still in development, this means you may make mistakes in your answer.
-DO NOT OUTPUT TEXT-ONLY WHEN CALLING FUNCTIONS.
 """
 
 # TOOLS (new SDK format)
@@ -164,7 +163,7 @@ tool_python = types.Tool(function_declarations=[
         "parameters": {
             "type": "object",
             "properties": {
-                "code_text": {"type": "string", "description": "Write the Python code here."}
+                "code_text": {"type": "string", "description": "Write the Python code here (string)."}
             },
             "required": ["code_text"]
         }
