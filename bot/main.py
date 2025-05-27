@@ -24,26 +24,17 @@ from logging.handlers import RotatingFileHandler
 import traceback
 import mimetypes
 from pydub import AudioSegment
-
 # MongoDB
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-
 # Gemini SDK (new)
 from google.genai import Client, types
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
-
 # Imagen 3
 import vertexai
 from vertexai.preview.vision_models import ImageGenerationModel
-
-# ENV VARS
-THE_CREDENTIALS = os.environ.get("GCP_CREDS")
-if not THE_CREDENTIALS:
-    raise ValueError("Environment variable GCP_CREDS is not set")
-decoded_credentials = base64.b64decode(THE_CREDENTIALS).decode("utf-8")
-credentials_info = json.loads(decoded_credentials)
-credentials = service_account.Credentials.from_service_account_info(credentials_info)
+# import everything from tools.py
+from tools import *
 
 # MongoDB setup
 MONGO_URI = os.getenv('MONGO_URI')
@@ -69,15 +60,11 @@ logger.addHandler(console_handler)
 # ENV
 bot_token = os.getenv('TOKEN')
 ai_key = os.getenv('GEMINI_KEY')
-hf_token = os.getenv('HF_TOKEN')
-brave_token = os.getenv('BRAVE_TOKEN')
-gcp_project = os.getenv('GCP_PROJECT')
 
 SEARCH_SNIPPET_SIZE = 6000
 MAX_CHAT_HISTORY_MESSAGES = 24
 # model ID
-model_id = "gemini-2.5-flash-preview-05-20"
-image_model_id = "imagen-3.0-fast-generate-001"
+model_id = "gemini-2.5-flash-preview-05-20" # default
 
 # Maintain last 10 attachments per type and per channel
 attachment_histories = defaultdict(lambda: {
@@ -249,103 +236,6 @@ intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
 bot = discord.Client(intents=intents)
-
-# Brave search
-async def search_brave(search_query, session):
-    url = f'https://api.search.brave.com/res/v1/web/search?q={search_query}'
-    headers = {
-        'User-Agent': 'Mozilla/5.0',
-        'Accept': 'application/json',
-        'X-Subscription-Token': brave_token
-    }
-    async with session.get(url, headers=headers, timeout=15) as response:
-        if response.status != 200:
-            return f'Error: Unable to fetch results (status code {response.status})'
-        data = await response.json()
-        results = data.get('web', {}).get('results', [])
-        if not results:
-            return 'Error: No search results found.'
-        search_results = []
-        for result in results:
-            title = result.get('title', '')
-            link = result.get('url', '')
-            search_results.append({'title': title, 'link': link})
-        return search_results
-
-async def fetch_snippet(url, session, max_length=SEARCH_SNIPPET_SIZE):
-    try:
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        async with session.get(url, headers=headers, timeout=15) as response:
-            if response.status != 200:
-                return f'Error: Unable to fetch content from {url} (status code {response.status})'
-            text = await response.text()
-            soup = BeautifulSoup(text, 'html.parser')
-            paragraphs = soup.find_all('p')
-            content = ' '.join([para.get_text() for para in paragraphs])
-            if len(content) > max_length:
-                return content[:max_length] + '‎ '
-            else:
-                return content
-    except Exception as e:
-        logger.error("An error occurred:\n" + traceback.format_exc())
-        return f'Error: Unable to fetch content from {url} ({str(e)})'
-
-async def browser(search_query: str, search_rn: int):
-    search_rn = max(10, int(search_rn))
-    try:
-        async with aiohttp.ClientSession() as session:
-            results = await search_brave(search_query, session)
-            if not isinstance(results, list):
-                return results
-            limited_results = results[:search_rn]
-            snippet_tasks = [fetch_snippet(result['link'], session) for result in limited_results]
-            snippets = await asyncio.gather(*snippet_tasks)
-            results_output = []
-            for i, (result, snippet) in enumerate(zip(limited_results, snippets)):
-                result_str = f'{i+1}. Title: {result["title"]}\nLink: {result["link"]}\nSnippet: {snippet}\n'
-                results_output.append(result_str)
-            return '\n'.join(results_output)
-    except Exception as e:
-        logger.error("An error occurred:\n" + traceback.format_exc())
-        return f'Error in `search` function: {e}'
-
-# Imagen 3
-async def imagine(img_prompt: str, ar: str):
-    vertexai.init(project=gcp_project, location="us-central1", credentials=credentials)
-    img_info_var = {"is_error": 0, "img_error_msg": "null"}
-    generation_model = ImageGenerationModel.from_pretrained("imagen-3.0-fast-generate-001")
-    try:
-        image_response = generation_model.generate_images(
-            prompt=img_prompt,
-            number_of_images=1,
-            aspect_ratio=ar,
-            safety_filter_level="block_some",
-        )
-        generated_image = image_response[0]
-        image_bytes = generated_image._image_bytes
-        image = Image.open(io.BytesIO(image_bytes))
-        image_filename = f"output_{random.randint(1000, 9999)}.png"
-        image.save(image_filename)
-        img_info_var.update({"filename": image_filename})
-        return img_info_var
-    except Exception as e:
-        img_info_var.update({"is_error": 1, "img_error_msg": f"{e}"})
-        return img_info_var
-
-def exec_python(code):
-    code = textwrap.dedent(code)
-    print(code)
-    buffer = io.StringIO()
-    sys.stdout = buffer
-    try:
-        exec(code)
-        output = buffer.getvalue()
-        print('output:' + output)
-        return output
-    except Exception as e:
-        return f"An error occurred: {e}"
-    finally:
-        sys.stdout = sys.__stdout__
 
 # classes for views
 class PythonResultView(discord.ui.View):
