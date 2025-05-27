@@ -86,61 +86,52 @@ class Settings(commands.Cog):
     
     @channels_setting.command(description="Add one or more channels to the bot to respond")
     @commands.has_permissions(manage_guild=True)
-    async def add(self, ctx: discord.ApplicationContext, channels: list[discord.TextChannel]):
-        if not channels:
-            await ctx.respond(":x: You must provide at least one channel.", ephemeral=True)
-            return
-        channel_ids = [channel.id for channel in channels]
+    async def add(self, ctx: discord.ApplicationContext, channel: Union[discord.TextChannel]):
         try:
             result = db.bot_settings.update_one(
                 {"server_id": ctx.guild_id},
-                {"$addToSet": {"channels": {"$each": channel_ids}}},
+                {"$addToSet": {"channels": channel.id}},
                 upsert=True
             )
-            # If a document existed and no new channels were added
+            # If modified_count is zero and no upsert happened, then the channel was already in the list.
             if result.modified_count == 0 and result.upserted_id is None:
-                await ctx.respond(":x: The provided channel(s) are already added.", ephemeral=True)
-                return
-            await ctx.respond("✅ Channels added: " + ", ".join(f"<#{cid}>" for cid in channel_ids), ephemeral=True)
+                await ctx.respond(":warning: This channel has already been added.", ephemeral=True)
+            else:
+                await ctx.respond(f"✅ <#{channel.id}> has been **added!**", ephemeral=True)
         except Exception as e:
-            await ctx.respond(f":x: An error occurred while adding the channel(s): {e}", ephemeral=True)
-            print(f"Error in channels_setting add: {e}")
+            await ctx.respond(f":x: An error occurred while adding the channel: {e}", ephemeral=True)
+            print(f"Error in channels_setting: {e}")
 
     @add.error
     async def add_error(self, ctx: discord.ApplicationContext, error):
         if isinstance(error, commands.MissingPermissions):
-            await ctx.respond(":x: You do not have the required permissions to use this command!", ephemeral=True)
+            await ctx.respond(":x: You do not have the required permissions to use this command.", ephemeral=True)
         else:
-            await ctx.respond(f":x: An error occurred: {error}", ephemeral=True)
+            raise error
 
-    @channels_setting.command(description="Remove one or more channels from the bot's allowed channels")
+    @channels_setting.command(description="Remove a channel from the bot to respond")
     @commands.has_permissions(manage_guild=True)
-    async def remove(self, ctx: discord.ApplicationContext, channels: list[discord.TextChannel]):
-        if not channels:
-            await ctx.respond(":x: You must provide at least one channel to remove.", ephemeral=True)
-            return
-        channel_ids = [channel.id for channel in channels]
+    async def remove(self, ctx: discord.ApplicationContext, channel: Union[discord.TextChannel]):
         try:
             result = db.bot_settings.update_one(
                 {"server_id": ctx.guild_id},
-                {"$pull": {"channels": {"$in": channel_ids}}}
+                {"$pull": {"channels": channel.id}}
             )
-            # If no channels were removed
             if result.modified_count == 0:
-                await ctx.respond(":x: The provided channel(s) were not found or already removed.", ephemeral=True)
-                return
-            await ctx.respond("✅ Channels removed: " + ", ".join(f"<#{cid}>" for cid in channel_ids), ephemeral=True)
+                await ctx.respond(":warning: This channel was not found in the list.", ephemeral=True)
+            else:
+                await ctx.respond(f"✅ <#{channel.id}> has been **removed!**", ephemeral=True)
         except Exception as e:
-            await ctx.respond(f":x: An error occurred while removing the channel(s): {e}", ephemeral=True)
+            await ctx.respond(f":x: An error occurred while removing the channel: {e}", ephemeral=True)
             print(f"Error in channels_setting remove: {e}")
 
     @remove.error
     async def remove_error(self, ctx: discord.ApplicationContext, error):
         if isinstance(error, commands.MissingPermissions):
-            await ctx.respond(":x: You do not have the required permissions to use this command!", ephemeral=True)
+            await ctx.respond(":x: You do not have the required permissions to use this command.", ephemeral=True)
         else:
-            await ctx.respond(f":x: An error occurred: {error}", ephemeral=True)
-
+            raise error
+            
 def setup(bot):
     bot.add_cog(Settings(bot))
 
