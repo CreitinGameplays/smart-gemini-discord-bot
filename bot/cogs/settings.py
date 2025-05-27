@@ -69,9 +69,45 @@ class Settings(commands.Cog):
         "Change the AI model used by the bot."
     )
 
-    @settings.command(name="open", description="Manage bot settings.")
+    @settings.command(name="open", description="Display your current bot settings and instructions to manage them.")
     async def open(self, ctx: discord.ApplicationContext):
-        await ctx.respond("Use one of the subcommands to manage bot settings.", ephemeral=True)
+        try:
+            # Retrieve user settings from the database for this user, using defaults if none exist.
+            user_settings = db.bot_settings.find_one({"user_id": ctx.author.id})
+            if user_settings is None:
+                # Defaults if settings not found.
+                temperature = 0.6
+                model = "gemini-2.5-flash-preview-05-20"
+                mention_author = True
+            else:
+                temperature = user_settings.get("temperature", 0.6)
+                model = user_settings.get("model", "gemini-2.5-flash-preview-05-20")
+                mention_author = user_settings.get("mention_author", True)
+            
+            # Create an embed that displays the current settings.
+            embed = discord.Embed(
+                title="Current Bot Settings",
+                description="Below are your current settings. Use the subcommands to update any setting.",
+                color=discord.Colour.blue()
+            )
+            embed.add_field(name="Temperature", value=f"`{temperature}`", inline=True)
+            embed.add_field(name="AI Model", value=f"`{model}`", inline=True)
+            embed.add_field(name="Mention Preference", value=f"`{'Yes' if mention_author else 'No'}`", inline=True)
+            embed.add_field(
+                name="Next Steps",
+                value=("To change any of these settings, use the following subcommands:\n"
+                    "- `/settings/temperature set [value]` to adjust the AI temperature. This **controls the model randomness**: higher values yield more creative responses, while lower values produce more focused and deterministic results.\n
+                    "- `/settings/model set [model]` to change the AI model.\n"
+                    "- `/settings/mention mention [True/False]` to set your mention preference.\n"
+                    "- For managing allowed channels, use `/settings/channel add/remove/list`.\n"),
+                inline=False
+            )
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            embed.set_footer(text=f"Requested by {ctx.author.name} on {current_time}")
+            await ctx.respond(embed=embed, ephemeral=True)
+        except Exception as e:
+            await ctx.respond(f":x: An error occurred while retrieving your settings: {e}", ephemeral=True)
+            print(f"Error in settings open command: {e}")
 
     @set_temperature.command(description="Set the AI temperature value (0-2).")
     async def set(self, ctx: discord.ApplicationContext, value: float):
@@ -206,6 +242,6 @@ def setup(bot):
 
 # this will have some commands to change bot settings:
 # - change AI temperature - check
-# - change AI model
-# - Either if the bot should mention author or not
+# - change AI model - done 
+# - Either if the bot should mention author or not - done
 # - Allowed channels ID for the bot to respond in - check
