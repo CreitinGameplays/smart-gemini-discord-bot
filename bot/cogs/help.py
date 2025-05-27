@@ -17,9 +17,11 @@ class Help(commands.Cog):
         guild_shard = ctx.guild.shard_id if ctx.guild else 0
 
         shard_latency_ms = bot_latency_ms
-        for shard in self.bot.latencies:
-            if shard.shard_id == guild_shard:
-                shard_latency_ms = round(shard.latency * 1000)
+
+        for shard_info in self.bot.latencies:
+            shard_id, latency = shard_info
+            if shard_id == guild_shard:
+                shard_latency_ms = round(latency * 1000)
                 break
 
         embed = discord.Embed(title="Pong! :ping_pong:", color=discord.Color.green())
@@ -38,6 +40,7 @@ class Help(commands.Cog):
             embed.set_thumbnail(url=self.bot.user.avatar.url)
         else:
             embed.set_footer(text="Bot powered by Gemini")
+
         await ctx.edit_original_message(embed=embed)
 
 def setup(bot):
