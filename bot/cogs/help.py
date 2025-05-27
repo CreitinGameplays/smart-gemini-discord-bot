@@ -13,18 +13,31 @@ class Help(commands.Cog):
 
         bot_latency_ms = round(self.bot.latency * 1000)
         total_shards = self.bot.shard_count if self.bot.shard_count else 1
-        guild_shard = ctx.guild.shard_id if ctx.guild else "N/A"
+
+        guild_shard = ctx.guild.shard_id if ctx.guild else 0
+
+        shard_latency_ms = bot_latency_ms
+        for shard in self.bot.latencies:
+            if shard.shard_id == guild_shard:
+                shard_latency_ms = round(shard.latency * 1000)
+                break
 
         embed = discord.Embed(title="Pong! :ping_pong:", color=discord.Color.green())
         embed.add_field(name="Bot Latency", value=f"{bot_latency_ms} ms", inline=False)
         embed.add_field(name="Total Shards", value=str(total_shards), inline=False)
-        embed.add_field(name="Guild Shard", value=str(guild_shard), inline=False)
+        embed.add_field(name="Current Shard", value=f"ID: {guild_shard} | Latency: {shard_latency_ms} ms", inline=False)
 
         await ctx.respond(embed=embed)
         end_time = time.perf_counter()
         message_latency_ms = round((end_time - start_time) * 1000)
 
         embed.add_field(name="Message Latency", value=f"{message_latency_ms} ms", inline=False)
+        
+        if self.bot.user and self.bot.user.avatar:
+            embed.set_footer(text=f"Requested by {ctx.author}", icon_url=self.bot.user.avatar.url)
+            embed.set_thumbnail(url=self.bot.user.avatar.url)
+        else:
+            embed.set_footer(text="Bot powered by Gemini")
         await ctx.edit_original_message(embed=embed)
 
 def setup(bot):
