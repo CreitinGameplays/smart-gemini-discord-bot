@@ -28,19 +28,6 @@ from tools import *
 MONGO_URI = os.getenv('MONGO_URI')
 mongo_client = MongoClient(MONGO_URI, server_api=ServerApi('1'))
 
-async def setup_mongodb():
-    try:
-        # Check if the database exists
-        db = mongo_client["gemini-bot"]
-        c_list = mongo_client.list_collections()
-        if 'gemini_bot' not in c_list:
-            print("Creating 'gemini_bot' database...")
-            await db.create_collection("gemini_bot")
-        else:
-            print("'gemini_bot' database already exists.")
-    except Exception as e:
-        print(f"Error setting up MongoDB: {e}")
-
 # mongo db will be useful for stuff later
 
 # Logging
@@ -63,6 +50,8 @@ ai_key = os.getenv('GEMINI_KEY')
 
 SEARCH_SNIPPET_SIZE = 6000
 MAX_CHAT_HISTORY_MESSAGES = 24
+allowed_ids = [775678427511783434] # creitin id xd
+
 # model ID
 model_id = "gemini-2.5-flash-preview-05-20" # default
 image_model_id = "imagen-3.0-fast-generate-001"
@@ -312,12 +301,9 @@ def clean_result(result):
 # Discord events and message handler
 @bot.event
 async def on_ready():
-    await setup_mongodb()
     msg = discord.Game("Made by Creitin Gameplays! 🌟")
     await bot.change_presence(status=discord.Status.online, activity=msg)
     print(f'Logged in as {bot.user}!')
-
-allowed_ids = [775678427511783434] # creitin id xd
 
 @bot.event
 async def on_message(message):
