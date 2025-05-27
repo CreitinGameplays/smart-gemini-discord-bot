@@ -25,10 +25,10 @@ from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from tools import *
 
 # MongoDB setup
+# mongo db will be useful here
 MONGO_URI = os.getenv('MONGO_URI')
 mongo_client = MongoClient(MONGO_URI, server_api=ServerApi('1'))
-
-# mongo db will be useful for stuff later
+db = mongo_client["gemini-bot-db"]
 
 # Logging
 handler = RotatingFileHandler(
@@ -292,7 +292,6 @@ async def restart_bot():
 def clean_result(result):
     if isinstance(result, str):
         try:
-            # Try to parse Python dict string to real dict
             result_dict = ast.literal_eval(result)
             if isinstance(result_dict, dict):
                 return result_dict
@@ -300,7 +299,7 @@ def clean_result(result):
             pass
     return result
 
-# Discord events and message handler
+# Discord events
 @bot.event
 async def on_ready():
     if bot.auto_sync_commands:
@@ -355,6 +354,13 @@ Bot developed by Creitin Gameplays.
         await handle_message(message)
 
 async def handle_message(message):
+    # gather some database settings here
+    user_settings = db.bot_settings.find_one({"user_id": message.author.id})
+    if user_settings:
+        #model_id = user_settings.get("model_id", model_id) #later
+        temperature = user_settings.get("temperature", 0.6)
+        print("User temp settings: " + temperature) # debug
+
     bot_message = None
     today2 = datetime.datetime.now()
     todayday2 = f'{today2.strftime("%A")}, {today2.month}/{today2.day}/{today2.year}'
