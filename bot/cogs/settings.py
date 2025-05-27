@@ -36,14 +36,14 @@ class Settings(commands.Cog):
         try:
             if message.content.startswith('.setupdb'):
                 if message.author.id != bot_owner_id:
-                    await message.reply(":x: You do not have permission to use this command.", ephemeral=True)
+                    await message.reply(":x: You do not have permission to use this command.")
                     return
                 else:
                     await setup_mongodb()
-                    await message.reply(f"MongoDB setup done!", ephemeral=True)
+                    await message.reply(f"MongoDB setup done!")
             
         except Exception as e:
-            await message.reply(f":x: An error occurred: {e}", ephemeral=True)
+            await message.reply(f":x: An error occurred: {e}")
             print(f"Error in on_message: {e}")
 
 def setup(bot):
