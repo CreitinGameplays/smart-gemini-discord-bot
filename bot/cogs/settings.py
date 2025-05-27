@@ -5,6 +5,8 @@ from pymongo.server_api import ServerApi
 import os
 from typing import Union
 from discord import option
+import datetime
+from datetime import datetime
 
 uri = os.getenv('MONGO_URI')
 if not uri:
@@ -148,6 +150,9 @@ class Settings(commands.Cog):
                 description=description,
                 color=discord.Colour.gold()
             )
+
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            list_embed.set_footer(text=f"Requested by {ctx.author.name} on {current_time}")
             await ctx.respond(embed=list_embed)
         except Exception as e:
             await ctx.respond(f":x: An error occurred while listing channels: {e}", ephemeral=True)
