@@ -65,8 +65,8 @@ class Settings(commands.Cog):
         "Manage channels that the bot should respond"
     )
 
-    @settings.command(name="info", description="Displays bot settings information.")
-    async def info(self, ctx: discord.ApplicationContext):
+    @settings.command(name="info", description="Manage bot settings.")
+    async def open(self, ctx: discord.ApplicationContext):
         await ctx.respond("Use one of the subcommands to manage bot settings.", ephemeral=True)
 
     @set_temperature.command(description="Set the AI temperature value (0-2).")
@@ -162,7 +162,7 @@ def setup(bot):
     bot.add_cog(Settings(bot))
 
 # this will have some commands to change bot settings:
-# - change AI temperature
+# - change AI temperature - check
 # - change AI model
 # - Either if the bot should mention author or not
-# - Allowed channels ID for the bot to respond in
+# - Allowed channels ID for the bot to respond in - check
