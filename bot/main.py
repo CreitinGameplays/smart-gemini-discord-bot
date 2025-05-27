@@ -31,7 +31,7 @@ mongo_client = MongoClient(MONGO_URI, server_api=ServerApi('1'))
 async def setup_mongodb():
     try:
         # Check if the database exists
-        db = mongo_client["gemini-bot-db"]
+        db = mongo_client["gemini-bot"]
         c_list = mongo_client.list_collections()
         if 'gemini_bot' not in c_list:
             print("Creating 'gemini_bot' database...")
