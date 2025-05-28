@@ -126,13 +126,6 @@ class Help(commands.Cog):
                 icon_url=owner.display_avatar.url
             )
     
-            # Uptime & Basic Info
-            embed.add_field(
-                name="Uptime",
-                value=f"`{self.bot.info.get_uptime()}`",
-                inline=True
-            )
-    
             embed.add_field(
                 name="Py-cord version",
                 value=f"`{discord.__version__}`",
