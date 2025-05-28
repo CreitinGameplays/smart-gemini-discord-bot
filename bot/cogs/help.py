@@ -57,7 +57,7 @@ class Help(commands.Cog):
                         f"**{opt.name}**: {opt.description}" for opt in target_command.options
                     )
                     embed.add_field(name="Options", value=options_text, inline=False)
-                current_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+                current_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
                 embed.set_footer(text=f"Requested by {ctx.author} | {current_time}", icon_url=ctx.user.avatar.url)
                 embed.set_thumbnail(url=self.bot.user.avatar.url)
                 await ctx.respond(embed=embed)
