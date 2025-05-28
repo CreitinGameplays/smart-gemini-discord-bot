@@ -12,6 +12,7 @@ from datetime import datetime
 import base64
 from google import genai
 from google.genai import types
+import re
 
 uri = os.getenv('MONGO_URI')
 if not uri:
