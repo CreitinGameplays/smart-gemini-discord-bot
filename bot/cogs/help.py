@@ -12,7 +12,9 @@ class AddMe(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
         button = discord.ui.Button(label="Support Discord Server!", style=discord.ButtonStyle.link, url="https://discord.com/invite/Hg578mck2e")
+        button2 = discord.ui.Button(label="Add me!", style=discord.ButtonStyle.link, url="https://discord.com/oauth2/authorize?client_id=1219407466526146661&scope=bot&permissions=277025704960", emoji="❤")
         self.add_item(button)
+        self.add_item(button2)
 
 class Help(commands.Cog):
     def __init__(self, bot: commands.Bot): 
@@ -71,7 +73,7 @@ class Help(commands.Cog):
                 current_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
                 embed.set_footer(text=f"Requested by {ctx.author} | {current_time}", icon_url=ctx.user.avatar.url)
                 embed.set_thumbnail(url=self.bot.user.avatar.url)
-                await ctx.respond(embed=embed)
+                await ctx.respond(embed=embed, view=AddMe())
             else:
                 await ctx.respond(f":x: Command `{command}` not found.", ephemeral=True)
         else:
@@ -89,7 +91,7 @@ class Help(commands.Cog):
             current_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
             embed.set_footer(text=f"Requested by {ctx.author} | {current_time}", icon_url=ctx.user.avatar.url)
             embed.set_thumbnail(url=self.bot.user.avatar.url)
-            await ctx.respond(embed=embed)
+            await ctx.respond(embed=embed, view=AddMe())
 
     @discord.slash_command(
         name='about',
