@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import option
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -37,6 +38,7 @@ class Misc(commands.Cog):
         name="imagine", 
         description="Generate an image using Imagen 3 [Donators only]"
     )
+    @option(name="prompt", description="the prompt that will be used for image generation")
     async def imagine(
         self, 
         ctx: discord.ApplicationContext, 
