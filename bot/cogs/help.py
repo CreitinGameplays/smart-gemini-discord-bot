@@ -72,10 +72,10 @@ class Help(commands.Cog):
             ]
             if not commands_list:
                 commands_list.append("No commands available.")
-                
+
             embed = discord.Embed(title="Help - List of Commands ⚙️", color=discord.Color.blurple())
             embed.description = "\n".join(commands_list)
-            current_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+            current_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
             embed.set_footer(text=f"Requested by {ctx.author} | {current_time}", icon_url=ctx.user.avatar.url)
             embed.set_thumbnail(url=self.bot.user.avatar.url)
 
