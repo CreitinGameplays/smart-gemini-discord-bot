@@ -11,7 +11,7 @@ import logging
 class AddMe(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
-        button = discord.ui.button(label="Support Discord Server!", style=discord.ButtonStyle.link, url="https://discord.com/invite/Hg578mck2e")
+        button = discord.ui.Button(label="Support Discord Server!", style=discord.ButtonStyle.link, url="https://discord.com/invite/Hg578mck2e")
         self.add_item(button)
 
 class Help(commands.Cog):
