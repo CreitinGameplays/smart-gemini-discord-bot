@@ -14,6 +14,8 @@ import os
 import base64
 import json
 from bs4 import BeautifulSoup
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
 
 # Constants
 SEARCH_SNIPPET_SIZE = 6000
@@ -29,6 +31,12 @@ credentials = service_account.Credentials.from_service_account_info(credentials_
 
 brave_token = os.getenv('BRAVE_TOKEN')
 gcp_project = os.getenv('GCP_PROJECT')
+
+uri = os.getenv('MONGO_URI')
+if not uri:
+    raise ValueError("MONGO_URI environment variable is not set.")
+mongo_client = MongoClient(uri, server_api=ServerApi('1'))
+db = mongo_client["gemini-bot-db"]
 
 # Logging
 handler = RotatingFileHandler(
@@ -108,7 +116,17 @@ async def imagine(img_prompt: str, ar: str):
     vertexai.init(project=gcp_project, location="us-central1", credentials=credentials)
     img_info_var = {"is_error": 0, "img_error_msg": "null"}
     generation_model = ImageGenerationModel.from_pretrained("imagen-3.0-fast-generate-001")
+    user_settings = db.bot_settings.find_one({"user_id": ctx.author.id})
+    is_donator = None
     try:
+        if user_settings:
+            is_donator = user_settings.get("is_donator", False)
+            is_donator = bool(is_donator)
+            if is_donator == False:
+                error = "Image generation failed because the user is not a donator."
+                img_info_var = {"is_error": 1, "img_error_msg": error}
+                return img_info_var
+                
         image_response = generation_model.generate_images(
             prompt=img_prompt,
             number_of_images=1,
