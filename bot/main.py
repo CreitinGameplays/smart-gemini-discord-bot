@@ -359,7 +359,7 @@ async def handle_message(message):
                 upsert=True
             )
             user_settings = default_settings
-        else:
+        else: # get the info
             model_id = user_settings.get("model", model_id)
             temperature_setting = user_settings.get("temperature", 0.6)
             mention_author = bool(user_settings.get("mention_author", True))
