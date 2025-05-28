@@ -11,6 +11,9 @@ if not uri:
 mongo_client = MongoClient(uri, server_api=ServerApi('1'))
 db = mongo_client["gemini-bot-db"]
 
+temp_description = "**`temperature` controls the model randomness**: higher values yield more creative responses, while lower values produce more focused and deterministic results."
+model_description = "Choose a Gemini model that fits your needs: the high-performance pro version for donators or the flash versions for reliable standard responses."
+
 # Modal for updating the temperature.
 class TemperatureModal(discord.ui.Modal):
     def __init__(self):
@@ -120,6 +123,8 @@ class SettingsView(discord.ui.View):
         new_embed.add_field(name="Temperature", value=f"`{temperature}`", inline=True)
         new_embed.add_field(name="Gemini Model", value=f"`{model}`", inline=True)
         new_embed.add_field(name="Mention", value=f"`{'Yes' if mention else 'No'}`", inline=True)
+        new_embed.add_field(name="Temperature Description", value=temp_description, inline=False)
+        new_embed.add_field(name="Models", value=model_description, inline=False)
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         new_embed.set_footer(text=f"Requested by {interaction.user.name} on {current_time}")
         if interaction.client.user and interaction.client.user.avatar:
@@ -148,6 +153,8 @@ class Settings(commands.Cog):
             embed.add_field(name="Temperature", value=f"`{temperature}`", inline=True)
             embed.add_field(name="Gemini Model", value=f"`{model}`", inline=True)
             embed.add_field(name="Mention", value=f"`{'Yes' if mention else 'No'}`", inline=True)
+            embed.add_field(name="Temperature Description", value=temp_description, inline=False)
+            embed.add_field(name="Models", value=model_description, inline=False)
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             embed.set_footer(text=f"Requested by {ctx.author.name} on {current_time}")
             if self.bot.user and self.bot.user.avatar:
