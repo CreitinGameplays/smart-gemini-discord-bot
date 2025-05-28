@@ -112,11 +112,11 @@ async def browser(search_query: str, search_rn: int):
         return f'Error in `search` function: {e}'
 
 # Imagen 3
-async def imagine(img_prompt: str, ar: str):
+async def imagine(img_prompt: str, ar: str, author_id: int):
     vertexai.init(project=gcp_project, location="us-central1", credentials=credentials)
     img_info_var = {"is_error": 0, "img_error_msg": "null"}
     generation_model = ImageGenerationModel.from_pretrained("imagen-3.0-fast-generate-001")
-    user_settings = db.bot_settings.find_one({"user_id": ctx.author.id})
+    user_settings = db.bot_settings.find_one({"user_id": author_id})
     is_donator = None
     try:
         if user_settings:
@@ -126,7 +126,7 @@ async def imagine(img_prompt: str, ar: str):
                 error = "Image generation failed because the user is not a donator."
                 img_info_var = {"is_error": 1, "img_error_msg": error}
                 return img_info_var
-                
+
         image_response = generation_model.generate_images(
             prompt=img_prompt,
             number_of_images=1,

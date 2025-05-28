@@ -701,7 +701,7 @@ async def handle_message(message):
                             prompt = fn.args.get('prompt', '')
                             ar = fn.args.get('ar', '1:1')
                             await bot_message.edit(content="-# Generating Image... <a:gemini_sparkles:1321895555676504077>")
-                            imagine_result = await imagine(prompt, ar)
+                            imagine_result = await imagine(prompt, ar, message.author.id)
                             if imagine_result["is_error"] == 1:
                                 await bot_message.edit(content='-# An Error Occurred <:error_icon:1295348741058068631>')
                                 function_response_part = types.Part.from_function_response(
