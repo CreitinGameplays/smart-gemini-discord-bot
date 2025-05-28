@@ -149,7 +149,7 @@ class Misc(commands.Cog):
             generate_config = types.GenerateContentConfig(response_mime_type="text/plain")
             response_text = ""
             # Send an initial response.
-            await ctx.respond("Generating answer...")
+            await ctx.respond("<a:gemini_sparkles:1321895555676504077> _ _")
             
             # Stream generation in a blocking call wrapped in run_in_executor.
             def stream_generation():
