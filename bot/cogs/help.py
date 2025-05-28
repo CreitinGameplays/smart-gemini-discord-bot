@@ -1,6 +1,7 @@
 import time
 import discord
 from discord.ext import commands
+import datetime
 
 class Help(commands.Cog):
     def __init__(self, bot): 
@@ -38,6 +39,26 @@ class Help(commands.Cog):
         embed.set_thumbnail(url=self.bot.user.avatar.url)
 
         await ctx.edit(embed=embed)
+
+    @discord.slash_command(name="help", description="List all available bot commands with their description")
+    async def help(self, ctx):
+        # Gather all application commands except help
+        commands_list = [
+            f"/{command.name} - {command.description}"
+            for command in self.bot.application_commands
+            if command.name != "help"
+        ]
+        if not commands_list:
+            commands_list.append("No commands available.")
+
+        embed = discord.Embed(title="Help - List of Commands ⚙️", color=discord.Color.blurple())
+        embed.description = "\n".join(commands_list)
+        current_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+
+        embed.set_footer(text=f"Requested by {ctx.author} | {current_time}", icon_url=ctx.user.avatar.url)
+        embed.set_thumbnail(url=self.bot.user.avatar.url)
+
+        await ctx.respond(embed=embed)
 
 def setup(bot):
     bot.add_cog(Help(bot))

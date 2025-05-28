@@ -24,8 +24,7 @@ from google.generativeai.types import HarmCategory, HarmBlockThreshold
 # import everything from tools.py
 from tools import *
 
-# MongoDB setup
-# mongo db will be useful here
+# mongodb will be useful here
 MONGO_URI = os.getenv('MONGO_URI')
 mongo_client = MongoClient(MONGO_URI, server_api=ServerApi('1'))
 db = mongo_client["gemini-bot-db"]
@@ -318,15 +317,6 @@ async def on_message(message):
         return
     today1 = datetime.datetime.now()
     todayhour1 = f'{today1.hour}h:{today1.minute}m:{today1.second}s'
-    if message.content.startswith('!k'):
-        if message.author.id in allowed_ids:
-            await message.reply(f'`{message.author.name}, Killing process and starting a new one...`')
-            await asyncio.sleep(0.5)
-            sys.exit(1)
-        else:
-            unauthorized = await message.reply(":x: You don't have permissions to run this command.")
-            await asyncio.sleep(5)
-            await unauthorized.delete()
     if message.content.startswith('!r'):
         if message.author.id in allowed_ids:
             await message.reply(f'`{message.author.name}, restarting bot...`')
@@ -336,24 +326,6 @@ async def on_message(message):
             unauthorized = await message.reply(":x: You don't have permissions to run this command.")
             await asyncio.sleep(5)
             await unauthorized.delete()
-    # help command gonna be moved to a cog later
-    if message.content.startswith('!h'):
-        try:
-            helpcmd = f"""
-            ```
-My commands:
-to be implemented:
-Experimental bot - Requested by {message.author.name} at {todayhour1}. V4.1.5
-Bot developed by Creitin Gameplays.
-            ```
-            """
-            msg = await message.reply(helpcmd)
-            await asyncio.sleep(20)
-            await msg.delete()
-        except Exception as e:
-            logger.error("An error occurred:\n" + traceback.format_exc())
-            await message.reply(f":x: An error occurred: `{e}`")
-
     if bot.user in message.mentions or (message.reference and message.reference.resolved.author == bot.user):
         if message.channel.id in allowed_channels:
             await handle_message(message)
