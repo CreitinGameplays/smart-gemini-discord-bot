@@ -125,13 +125,6 @@ class Help(commands.Cog):
                 name=f"Made with ❤️ by {owner.name}",
                 icon_url=owner.display_avatar.url
             )
-            
-            # Bot Version Info
-            embed.add_field(
-                name="Version",
-                value=f"`{self.bot.info.version}`",
-                inline=False
-            )
     
             # Uptime & Basic Info
             embed.add_field(
@@ -195,7 +188,7 @@ class Help(commands.Cog):
                 usage_stats = usage_stats[:1021] + "..."
                     
             embed.add_field(
-                name="Command Usage Statistics",
+                name="Command Usage Statistics (since last restart)",
                 value=f"```\n{usage_stats}```",
                 inline=False
             )
