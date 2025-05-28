@@ -97,7 +97,7 @@ class Help(commands.Cog):
     @discord.slash_command(
         name='about',
         description='Show detailed and technical information about the bot',
-        integration_types={discord.IntegrationType.guild_install}
+        integration_types={discord.IntegrationType.guild_install, discord.IntegrationType.user_install}
     )
     async def about(self, ctx: discord.ApplicationContext):
         self.is_slash_command = True
