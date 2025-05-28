@@ -14,7 +14,7 @@ db = mongo_client["gemini-bot-db"]
 # Modal for updating the temperature.
 class TemperatureModal(discord.ui.Modal):
     def __init__(self):
-        super().__init__()
+        super().__init__(title="Set Temperature")
         self.title = "Set Temperature"
         self.input_temperature = discord.ui.InputText(
             label="Temperature (0-2)",
