@@ -98,9 +98,9 @@ ALWAYS use this format example:
 
 # IMAGE GENERATION INSTRUCTIONS
 Whenever the user asks you to generate an image, create a prompt that `{image_model_id}` model can use to generate the image and abide to the following policy:
-    1. The prompt must be in English. Translate to English if needed.
+    1. The prompt MUST be in English. Translate to English if needed.
     2. DO NOT ask for permission to generate the image, just do it!
-    3. Do not create more than 1 image, even if the user requests more.
+    3. DO NOT create more than 1 image, even if the user requests more.
 Supported aspect ratios: 16:9, 9:16, 1:1. Choose the best aspect ratio according to the image that will be generated.
 Tip: Add tags in the prompt such as "realistic, detailed, photorealistic, HD" and others to improve the quality of the generated image. Put as much detail as possible in the prompt. Prompt tags must be separated by commas.
 Only generate image if user explicitly asks to!
@@ -226,7 +226,8 @@ bot = discord.AutoShardedBot(intents=intents, shard_count=4)
 # add cogs
 cogs_list = [
     'settings',
-    'help'
+    'help',
+    'misc'
 ]
 for cog in cogs_list:
     bot.load_extension(f'cogs.{cog}')
