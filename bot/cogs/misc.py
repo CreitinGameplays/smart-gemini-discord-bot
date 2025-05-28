@@ -122,6 +122,7 @@ class Misc(commands.Cog):
             view = DeleteView(ctx.author.id)
             await ctx.respond("<:checkmark0:1246546819710849144> Here is your generated image:", file=file, view=view)
 
+
     @discord.slash_command(
         name="ask", 
         description="Ask a question using Gemini AI.",
@@ -146,25 +147,28 @@ class Misc(commands.Cog):
             ]
             generate_config = types.GenerateContentConfig(response_mime_type="text/plain")
             response_text = ""
-            # Run blocking generation in an executor
-            chunks = await ctx.bot.loop.run_in_executor(
-                None,
-                lambda: list(client.models.generate_content(
+            await ctx.respond("...")
+            
+            # Stream generation in a blocking call wrapped in run_in_executor
+            def stream_generation():
+                return list(client.models.generate_content_stream(
                     model=model,
                     contents=contents,
                     config=generate_config,
                 ))
-            )
-            # Process each chunk safely in case it's a tuple
+            chunks = await ctx.bot.loop.run_in_executor(None, stream_generation)
+            
+            # Accumulate and update the response continuously
             for chunk in chunks:
-                text = chunk.text if hasattr(chunk, "text") else chunk[0]
+                text = chunk.text if hasattr(chunk, "text") else (chunk[0] if isinstance(chunk, (list, tuple)) else "")
                 response_text += text
-            if not response_text.strip():
-                response_text = "<:alert:1220162599014895777> No response generated."
-                
+                await ctx.edit(content=response_text)
+                await asyncio.sleep(0.1)
+            
+            # Split the final output if too long
             response_chunks = split_msg(response_text)
             view = ModelInfoView(model)
-            await ctx.respond(response_chunks[0], view=view)
+            await ctx.edit(content=response_chunks[0], view=view)
             for chunk in response_chunks[1:]:
                 await ctx.followup.send(chunk)
         except Exception as e:
