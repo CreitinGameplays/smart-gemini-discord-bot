@@ -41,6 +41,7 @@ async def default_db_user(author_id):
                 {"$set": {"model": None}},
                 {"$set": {"mention_author": True}},
                 {"$set": {"is_donator": None}},
+            )
             """
             db.bot_settings.update_one(
                 {"user_id": interaction.user.id},
