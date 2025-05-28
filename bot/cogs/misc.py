@@ -21,7 +21,7 @@ if not uri:
 mongo_client = MongoClient(uri, server_api=ServerApi('1'))
 db = mongo_client["gemini-bot-db"]
 
-# Split message function (unchanged)
+# Split message function
 def split_msg(string, chunk_size=1500):
     chunks = []
     current_chunk = ""
@@ -148,7 +148,7 @@ class Misc(commands.Cog):
             ]
             generate_config = types.GenerateContentConfig(response_mime_type="text/plain")
             response_text = ""
-            await ctx.respond("...")
+            await ctx.respond("<a:gemini_sparkles:1321895555676504077>")
             
             # Stream generation in a blocking call wrapped in run_in_executor
             def stream_generation():
