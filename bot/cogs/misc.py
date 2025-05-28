@@ -135,7 +135,7 @@ class Misc(commands.Cog):
     @option(name="prompt", description="The question or prompt to ask")
     async def ask(self, ctx: discord.ApplicationContext, prompt: str):
         await ctx.defer()
-        # Retrieve user's model from settings or use default
+        # Retrieve user's model from settings or use default.
         user_settings = db.bot_settings.find_one({"user_id": ctx.author.id})
         model = user_settings.get("model") if user_settings and user_settings.get("model") else "gemini-2.5-flash-preview-05-20"
         try:
@@ -148,9 +148,10 @@ class Misc(commands.Cog):
             ]
             generate_config = types.GenerateContentConfig(response_mime_type="text/plain")
             response_text = ""
-            await ctx.respond("<a:gemini_sparkles:1321895555676504077>")
+            # Send an initial response.
+            await ctx.respond("Generating answer...")
             
-            # Stream generation in a blocking call wrapped in run_in_executor
+            # Stream generation in a blocking call wrapped in run_in_executor.
             def stream_generation():
                 return list(client.models.generate_content_stream(
                     model=model,
@@ -159,15 +160,17 @@ class Misc(commands.Cog):
                 ))
             chunks = await ctx.bot.loop.run_in_executor(None, stream_generation)
             
-            # Accumulate and update the response continuously
+            # Accumulate streaming response.
             for chunk in chunks:
                 text = chunk.text if hasattr(chunk, "text") else (chunk[0] if isinstance(chunk, (list, tuple)) else "")
                 response_text += text
-                await ctx.edit(content=response_text)
+                # Update the original response only while text is short.
+                if len(response_text) < 1900:  # keep some safety margin
+                    await ctx.edit(content=response_text)
                 await asyncio.sleep(0.1)
-            
-            # Split the final output if too long
-            response_chunks = split_msg(response_text)
+                
+            # Now split the complete response if it exceeds Discord's limit.
+            response_chunks = split_msg(response_text, chunk_size=1500)
             view = ModelInfoView(model)
             await ctx.edit(content=response_chunks[0], view=view)
             for chunk in response_chunks[1:]:
