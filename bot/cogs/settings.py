@@ -105,6 +105,28 @@ class SettingsView(discord.ui.View):
         modal = TemperatureModal()
         await interaction.response.send_modal(modal)
 
+    @discord.ui.button(label="", style=discord.ButtonStyle.grey, emoji="🔄")
+    async def reload_button(self, button: discord.ui.Button, interaction: discord.Interaction):
+        user_settings = db.bot_settings.find_one({"user_id": interaction.user.id}) or {}
+        temperature = user_settings.get("temperature", 0.6)
+        model = user_settings.get("model", "gemini-2.5-flash-preview-05-20")
+        mention = user_settings.get("mention_author", True)
+        
+        new_embed = discord.Embed(
+            title="Your Bot Settings",
+            description="Use the interactive menu below to update your settings.",
+            color=discord.Colour.blue()
+        )
+        new_embed.add_field(name="Temperature", value=f"`{temperature}`", inline=True)
+        new_embed.add_field(name="Gemini Model", value=f"`{model}`", inline=True)
+        new_embed.add_field(name="Mention", value=f"`{'Yes' if mention else 'No'}`", inline=True)
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        new_embed.set_footer(text=f"Requested by {interaction.user.name} on {current_time}")
+        if interaction.client.user and interaction.client.user.avatar:
+            new_embed.set_thumbnail(url=interaction.client.user.avatar.url)
+            
+        await interaction.response.edit_message(embed=new_embed)
+
 # Settings cog that consolidates all settings modifications into one command.
 class Settings(commands.Cog):
     def __init__(self, bot: discord.Bot):
