@@ -154,8 +154,10 @@ class Misc(commands.Cog):
                     config=generate_config,
                 ))
             )
+            # Process each chunk safely in case it's a tuple
             for chunk in chunks:
-                response_text += chunk.text
+                text = chunk.text if hasattr(chunk, "text") else chunk[0]
+                response_text += text
             if not response_text.strip():
                 response_text = "<:alert:1220162599014895777> No response generated."
                 
