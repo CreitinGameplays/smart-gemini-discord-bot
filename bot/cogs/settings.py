@@ -13,17 +13,18 @@ db = mongo_client["gemini-bot-db"]
 
 # Modal for updating the temperature.
 class TemperatureModal(discord.ui.Modal):
-    temperature = discord.ui.InputText(
-        label="Temperature (0-2)",
-        placeholder="Enter a value between 0 and 2"
-    )
-    
     def __init__(self):
-        super().__init__(title="Set Temperature")
+        super().__init__()
+        self.title = "Set Temperature"
+        self.input_temperature = discord.ui.InputText(
+            label="Temperature (0-2)",
+            placeholder="Enter a value between 0 and 2"
+        )
+        self.add_item(self.input_temperature)
     
     async def callback(self, interaction: discord.Interaction):
         try:
-            value = float(self.temperature.value)
+            value = float(self.input_temperature.value)
             if not (0 <= value <= 2):
                 await interaction.response.send_message(":x: Temperature must be between 0 and 2.", ephemeral=True)
                 return
@@ -41,9 +42,9 @@ class ModelDropdown(discord.ui.Select):
     def __init__(self):
         options = [
             discord.SelectOption(label="gemini-2.5-pro-preview-05-06", description="Donator only", emoji="🔥"),
-            discord.SelectOption(label="gemini-2.5-flash-preview-05-20", description="Standard model"),
-            discord.SelectOption(label="gemini-2.5-flash-preview-04-17", description="Standard model"),
-            discord.SelectOption(label="gemini-2.0-flash", description="Older model"),
+            discord.SelectOption(label="gemini-2.5-flash-preview-05-20", description="Standard model", emoji="<:gemini:1219726550195245127>"),
+            discord.SelectOption(label="gemini-2.5-flash-preview-04-17", description="Standard model", emoji="<:gemini:1219726550195245127>"),
+            discord.SelectOption(label="gemini-2.0-flash", description="Older model", emoji="<:gemini:1219726550195245127>"),
         ]
         super().__init__(
             placeholder="Select Gemini Model...",
@@ -99,7 +100,7 @@ class SettingsView(discord.ui.View):
         self.add_item(ModelDropdown())
         self.add_item(MentionDropdown())
     
-    @discord.ui.button(label="Set Temperature", style=discord.ButtonStyle.primary, emoji="🌡")
+    @discord.ui.button(label="Set Temperature", style=discord.ButtonStyle.grey, emoji="🌡")
     async def temperature_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         modal = TemperatureModal()
         await interaction.response.send_modal(modal)
