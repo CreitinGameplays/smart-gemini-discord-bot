@@ -1,10 +1,13 @@
 import discord
 from discord.ext import commands
-from bot.tools import imagine
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from tools import imagine
+
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from datetime import datetime
-import os
 
 uri = os.getenv('MONGO_URI')
 if not uri:
