@@ -341,21 +341,22 @@ async def handle_message(message):
     mention_author = True
 
     user_settings = db.bot_settings.find_one({"user_id": message.author.id})
-    if user_settings:
-        model_id = user_settings.get("model", model_id)
-        temperature_setting = user_settings.get("temperature", 0.6)
-        mention_author = user_settings.get("mention_author", True)
-        mention_author = bool(mention_author) 
-    else: # if the user aint in the goddamn database for fucks sake
-        db.bot_settings.update_one(
-            {"user_id": message.author.id},
-            {"$set": {"temperature": 0.6, "model": None, "mention_author": True, "is_donator": None}}
-        ) # simpler approach
-
     bot_message = None
     today2 = datetime.datetime.now()
     todayday2 = f'{today2.strftime("%A")}, {today2.month}/{today2.day}/{today2.year}'
     try:
+        # database stuff
+        if user_settings:
+            model_id = user_settings.get("model", model_id)
+            temperature_setting = user_settings.get("temperature", 0.6)
+            mention_author = user_settings.get("mention_author", True)
+            mention_author = bool(mention_author) 
+        else: # if the user aint in the goddamn database for fucks sake
+            db.bot_settings.update_one(
+                {"user_id": message.author.id},
+                {"$set": {"temperature": 0.6, "model": model_id, "mention_author": True, "is_donator": False}}
+            ) # simpler approach
+
         channel_id = message.channel.id
         channel_history = [msg async for msg in message.channel.history(limit=MAX_CHAT_HISTORY_MESSAGES)]
         channel_history.reverse()
