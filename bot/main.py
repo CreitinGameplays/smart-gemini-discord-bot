@@ -337,12 +337,16 @@ async def handle_message(message):
     async def default_db_user(author_id):
         user_settings = None
         try:
+            a = {
+                "name": "test",
+                "num": 12 # omg
+            }
             # this gonna get the user in mongodb
             user_settings = db.bot_settings.find_one({"user_id": author_id})
             if not user_settings:
                 db.bot_settings.update_one(
                     {"user_id": author_id},
-                    {"$set": {"temperature": 0.6}, {"model": None}, {"mention_author": True}, {"is_donator": None}},
+                    {"$set": {"temperature": 0.6, "model": None, "mention_author": True, "is_donator": None}}
                 )
             else:
                 return
@@ -350,7 +354,7 @@ async def handle_message(message):
             logger.error("An error occurred:\n" + traceback.format_exc())
             print("Aw Snap!" + str(e))
             return e
-            
+
     load_user_db = await default_db_user(message.author.id)
     ### USER DATABASE SETTINGS (default values) ###
     temperature_setting = 0.6
