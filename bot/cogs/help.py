@@ -4,7 +4,7 @@ from discord.ext import commands
 import datetime
 
 class Help(commands.Cog):
-    def __init__(self, bot): 
+    def __init__(self, bot: commands.Bot): 
         self.bot = bot
 
     @discord.slash_command(name="ping", description="Shows the bot latency")
