@@ -13,3 +13,4 @@ vertexai
 pydub
 pymongo
 pymongo[srv]
+psutil
