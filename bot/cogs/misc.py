@@ -138,6 +138,7 @@ class Misc(commands.Cog):
         # Retrieve user's model from settings or use default.
         user_settings = db.bot_settings.find_one({"user_id": ctx.author.id})
         model = user_settings.get("model") if user_settings and user_settings.get("model") else "gemini-2.5-flash-preview-05-20"
+        temperature = user_settings.get("temperature") if user_settings and user_settings.get("temperature") else 0.6
         try:
             client = genai.Client(api_key=os.environ.get("GEMINI_KEY"))
             contents = [
@@ -146,7 +147,7 @@ class Misc(commands.Cog):
                     parts=[types.Part.from_text(text=prompt)]
                 )
             ]
-            generate_config = types.GenerateContentConfig(response_mime_type="text/plain")
+            generate_config = types.GenerateContentConfig(temperature=temperature, response_mime_type="text/plain")
             response_text = ""
             await ctx.respond("<a:gemini_sparkles:1321895555676504077> _ _")
             
