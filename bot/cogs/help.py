@@ -40,25 +40,46 @@ class Help(commands.Cog):
 
         await ctx.edit(embed=embed)
 
-    @discord.slash_command(name="help", description="List all available bot commands with their description")
-    async def help(self, ctx):
-        # Gather all application commands except help
-        commands_list = [
-            f"/{command.name} - {command.description}"
-            for command in self.bot.application_commands
-            if command.name != "help"
-        ]
-        if not commands_list:
-            commands_list.append("No commands available.")
+    @discord.slash_command(name="help", description="List all available bot commands or get help on a specific command")
+    async def help(self, ctx, command: str = None):
+        if command:
+            # Search for a matching command (case-insensitive)
+            target_command = None
+            for cmd in self.bot.application_commands:
+                if cmd.name.lower() == command.lower():
+                    target_command = cmd
+                    break
+            if target_command:
+                embed = discord.Embed(title=f"Help - /{target_command.name}", color=discord.Color.blurple())
+                embed.description = target_command.description or "No description available."
+                if hasattr(target_command, "options") and target_command.options:
+                    options_text = "\n".join(
+                        f"**{opt.name}**: {opt.description}" for opt in target_command.options
+                    )
+                    embed.add_field(name="Options", value=options_text, inline=False)
+                current_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+                embed.set_footer(text=f"Requested by {ctx.author} | {current_time}", icon_url=ctx.user.avatar.url)
+                embed.set_thumbnail(url=self.bot.user.avatar.url)
+                await ctx.respond(embed=embed)
+            else:
+                await ctx.respond(f":x: Command `{command}` not found.", ephemeral=True)
+        else:
+            # List all commands except help if no specific command was provided.
+            commands_list = [
+                f"/{cmd.name} - {cmd.description}"
+                for cmd in self.bot.application_commands
+                if cmd.name != "help"
+            ]
+            if not commands_list:
+                commands_list.append("No commands available.")
+                
+            embed = discord.Embed(title="Help - List of Commands ⚙️", color=discord.Color.blurple())
+            embed.description = "\n".join(commands_list)
+            current_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+            embed.set_footer(text=f"Requested by {ctx.author} | {current_time}", icon_url=ctx.user.avatar.url)
+            embed.set_thumbnail(url=self.bot.user.avatar.url)
 
-        embed = discord.Embed(title="Help - List of Commands ⚙️", color=discord.Color.blurple())
-        embed.description = "\n".join(commands_list)
-        current_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-
-        embed.set_footer(text=f"Requested by {ctx.author} | {current_time}", icon_url=ctx.user.avatar.url)
-        embed.set_thumbnail(url=self.bot.user.avatar.url)
-
-        await ctx.respond(embed=embed)
+            await ctx.respond(embed=embed)
 
 def setup(bot):
     bot.add_cog(Help(bot))
