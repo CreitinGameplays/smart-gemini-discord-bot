@@ -2,6 +2,11 @@ import time
 import discord
 from discord.ext import commands
 import datetime
+import psutil
+import platform
+import asyncio
+import traceback
+import logging
 
 class Help(commands.Cog):
     def __init__(self, bot: commands.Bot): 
@@ -78,8 +83,132 @@ class Help(commands.Cog):
             current_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
             embed.set_footer(text=f"Requested by {ctx.author} | {current_time}", icon_url=ctx.user.avatar.url)
             embed.set_thumbnail(url=self.bot.user.avatar.url)
-
             await ctx.respond(embed=embed)
+
+    @discord.slash_command(
+        name='about',
+        description='Show detailed and technical information about the bot',
+        integration_types={discord.IntegrationType.guild_install}
+    )
+    async def about(self, ctx: discord.ApplicationContext):
+        self.is_slash_command = True
+        await self._show_about(ctx)
+
+    async def _show_about(self, ctx: discord.ApplicationContext):
+        try:
+            # Get system info
+            cpu_count = psutil.cpu_count()
+            cpu_usage = psutil.cpu_percent(interval=1)
+            memory = psutil.virtual_memory()
+            cpu_model = platform.processor()
+    
+            # Calculate total members and guilds
+            total_members = sum(guild.member_count for guild in self.bot.guilds)
+            total_guilds = len(self.bot.guilds)
+        
+            # Get bot specific info
+            total_shards = self.bot.shard_count if self.bot.shard_count else 1
+            current_shard = ctx.guild.shard_id if ctx.guild else 0
+            current_shard_name = f"Shard {current_shard}"  # Adjust as needed
+            shard_latency = self.bot.get_shard(current_shard).latency if self.bot.shard_count > 0 else self.bot.latency
+    
+            # Create embed
+            embed = discord.Embed(
+                title="Bot Information",
+                color=0x58D68D
+            )
+    
+            # Add bot owner info
+            app_info = await self.bot.application_info()
+            owner = app_info.owner
+            embed.set_author(
+                name=f"Made with ❤️ by {owner.name}",
+                icon_url=owner.display_avatar.url
+            )
+            
+            # Bot Version Info
+            embed.add_field(
+                name="Version",
+                value=f"`{self.bot.info.version}`",
+                inline=False
+            )
+    
+            # Uptime & Basic Info
+            embed.add_field(
+                name="Uptime",
+                value=f"`{self.bot.info.get_uptime()}`",
+                inline=True
+            )
+    
+            embed.add_field(
+                name="Py-cord version",
+                value=f"`{discord.__version__}`",
+                inline=True
+            )
+    
+            # Shard Information
+            embed.add_field(
+                name="Sharding Info",
+                value=(f"```\n"
+                       f"Total Shards: {total_shards}\n"
+                       f"Current Shard: {current_shard_name} (ID: {current_shard})\n"
+                       f"```"),
+                inline=False
+            )
+    
+            # Latency Information
+            embed.add_field(
+                name="Latency",
+                value=(f"```\n"
+                       f"Bot Latency: {round(self.bot.latency * 1000)}ms\n"
+                       f"Shard Latency: {round(shard_latency * 1000)}ms\n"
+                       f"```"),
+                inline=False
+            )
+    
+            # System Information
+            embed.add_field(
+                name="System Info",
+                value=(f"```\n"
+                       f"CPU: {cpu_model}\n"
+                       f"CPU Cores: {cpu_count}\n"
+                       f"CPU Usage: {cpu_usage}%\n"
+                       f"Total RAM: {memory.total / (1024 ** 3):.1f}GB\n"
+                       f"RAM Usage: {memory.percent}%\n"
+                       f"```"),
+                inline=False
+            )
+    
+            # Bot Stats
+            embed.add_field(
+                name="Bot Stats",
+                value=(f"```\n"
+                       f"Total Servers: {total_guilds}\n"
+                       f"Total Members: {total_members}\n"
+                       f"```"),
+                inline=False
+            )
+    
+            # Command Usage Stats
+            usage_stats = self.bot.info.get_command_stats()  # Assuming this returns a string
+            if len(usage_stats) > 1024:  # Discord embed field value limit
+                usage_stats = usage_stats[:1021] + "..."
+                    
+            embed.add_field(
+                name="Command Usage Statistics",
+                value=f"```\n{usage_stats}```",
+                inline=False
+            )
+            
+            # Send response
+            await ctx.defer()
+            msg = await ctx.respond(embed=embed)
+            await asyncio.sleep(20)
+            await msg.delete()
+    
+        except Exception as e:
+            logging.error("About command error:\n" + traceback.format_exc())
+            await ctx.respond(f":x: An error occurred: `{e}`")
 
 def setup(bot):
     bot.add_cog(Help(bot))
