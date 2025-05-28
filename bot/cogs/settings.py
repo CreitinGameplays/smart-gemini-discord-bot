@@ -21,7 +21,7 @@ class TemperatureModal(discord.ui.Modal):
         self.title = "Set Temperature"
         self.input_temperature = discord.ui.InputText(
             label="Temperature (0-2)",
-            placeholder="Enter a value between 0 and 2"
+            placeholder="Enter a float value between 0 and 2"
         )
         self.add_item(self.input_temperature)
     
@@ -117,7 +117,7 @@ class SettingsView(discord.ui.View):
         
         new_embed = discord.Embed(
             title="Your Bot Settings",
-            description="Use the interactive menu below to update your settings.",
+            description="Use the interactive menu below to update your settings. Your current setup:",
             color=discord.Colour.blue()
         )
         new_embed.add_field(name="Temperature", value=f"`{temperature}`", inline=True)
@@ -147,7 +147,7 @@ class Settings(commands.Cog):
             
             embed = discord.Embed(
                 title="Your Bot Settings",
-                description="Use the interactive menu below to update your settings.",
+                description="Use the interactive menu below to update your settings. Your current setup:",
                 color=discord.Colour.blue()
             )
             embed.add_field(name="Temperature", value=f"`{temperature}`", inline=True)
