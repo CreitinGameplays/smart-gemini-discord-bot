@@ -12,11 +12,14 @@ mongo_client = MongoClient(uri, server_api=ServerApi('1'))
 db = mongo_client["gemini-bot-db"]
 
 # Modal for updating the temperature.
-class TemperatureModal(discord.ui.Modal, title="Set Temperature"):
+class TemperatureModal(discord.ui.Modal):
     temperature = discord.ui.InputText(
         label="Temperature (0-2)",
         placeholder="Enter a value between 0 and 2"
     )
+    
+    def __init__(self):
+        super().__init__(title="Set Temperature")
     
     async def callback(self, interaction: discord.Interaction):
         try:
