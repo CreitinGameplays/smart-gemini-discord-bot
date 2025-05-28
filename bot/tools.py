@@ -14,6 +14,7 @@ import os
 import base64
 import json
 from bs4 import BeautifulSoup
+from PIL import Image
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
