@@ -29,42 +29,6 @@ MONGO_URI = os.getenv('MONGO_URI')
 mongo_client = MongoClient(MONGO_URI, server_api=ServerApi('1'))
 db = mongo_client["gemini-bot-db"]
 
-async def default_db_user(author_id):
-    user_settings = None
-    try:
-        # this gonna get the user in mongodb
-        user_settings = db.bot_settings.find_one({"user_id": author_id})
-        if not user_settings:
-            db.bot_settings.update_one(
-                {"user_id": author_id},
-                {"$set": {"temperature": 0.6}},
-                {"$set": {"model": None}},
-                {"$set": {"mention_author": True}},
-                {"$set": {"is_donator": None}},
-            )
-            """
-            db.bot_settings.update_one(
-                {"user_id": interaction.user.id},
-                {"$set": {"temperature": 0.6}},
-                upsert=True
-            )
-            db.bot_settings.update_one(
-                {"user_id": interaction.user.id},
-                {"$set": {"model": None}},
-                upsert=True
-            )
-            db.bot_settings.update_one(
-                {"user_id": interaction.user.id},
-                {"$set": {"mention_author": True}},
-                upsert=True
-            )
-            """
-        else:
-            return
-    except Exception as e:
-        print("Aw Snap!" + str(e))
-        return e
-
 # Logging
 handler = RotatingFileHandler(
     filename='bot_errors.log', mode='a', maxBytes=80 * 1024, backupCount=1, encoding='utf-8',
@@ -370,6 +334,23 @@ async def on_message(message):
             return
 
 async def handle_message(message):
+    async def default_db_user(author_id):
+        user_settings = None
+        try:
+            # this gonna get the user in mongodb
+            user_settings = db.bot_settings.find_one({"user_id": author_id})
+            if not user_settings:
+                db.bot_settings.update_one(
+                    {"user_id": author_id},
+                    {"$set": {"temperature": 0.6}, {"model": None}, {"mention_author": True}, {"is_donator": None}},
+                )
+            else:
+                return
+        except Exception as e:
+            logger.error("An error occurred:\n" + traceback.format_exc())
+            print("Aw Snap!" + str(e))
+            return e
+            
     load_user_db = await default_db_user(message.author.id)
     ### USER DATABASE SETTINGS (default values) ###
     temperature_setting = 0.6
