@@ -126,7 +126,7 @@ class SettingsView(discord.ui.View):
         new_embed.add_field(name="Temperature Description", value=temp_description, inline=False)
         new_embed.add_field(name="Models", value=model_description, inline=False)
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        new_embed.set_footer(text=f"Requested by {interaction.user.name} on {current_time}")
+        new_embed.set_footer(text=f"Requested by {interaction.user.name} on {current_time}", icon_url=interaction.user.avatar.url)
         if interaction.client.user and interaction.client.user.avatar:
             new_embed.set_thumbnail(url=interaction.client.user.avatar.url)
             
@@ -156,7 +156,7 @@ class Settings(commands.Cog):
             embed.add_field(name="Temperature Description", value=temp_description, inline=False)
             embed.add_field(name="Models", value=model_description, inline=False)
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            embed.set_footer(text=f"Requested by {ctx.author.name} on {current_time}")
+            embed.set_footer(text=f"Requested by {ctx.author.name} on {current_time}", icon_url=ctx.user.avatar.url)
             if self.bot.user and self.bot.user.avatar:
                 embed.set_thumbnail(url=self.bot.user.avatar.url)
             
