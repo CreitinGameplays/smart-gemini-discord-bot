@@ -40,77 +40,77 @@ class Help(commands.Cog):
 
         await ctx.edit(embed=embed)
 
-        @discord.slash_command(name="help", description="List all available bot commands or get help on a specific command")
-        async def help(self, ctx, command: str = None):
-            if command:
-                parts = command.split()
-                target_command = None
+    @discord.slash_command(name="help", description="List all available bot commands or get help on a specific command")
+    async def help(self, ctx, command: str = None):
+        if command:
+            parts = command.split()
+            target_command = None
 
-                # Check if a sub-command is specified
-                if len(parts) > 1:
-                    group_name = parts[0]
-                    subcommand_name = parts[1]
-                    for cmd in self.bot.application_commands:
-                        if cmd.name.lower() == group_name.lower() and hasattr(cmd, "children") and cmd.children:
-                            for child in cmd.children:
-                                if child.name.lower() == subcommand_name.lower():
-                                    target_command = child
-                                    break
-                            if target_command is None:
-                                await ctx.respond(f":x: Subcommand `{subcommand_name}` not found in command `{group_name}`.", ephemeral=True)
-                                return
-                            break
-                else:
-                    # Search for a matching command or command group (without specifying sub-command)
-                    for cmd in self.bot.application_commands:
-                        if cmd.name.lower() == command.lower():
-                            target_command = cmd
-                            break
-
-                if target_command:
-                    # Prepare title including parent command name if available.
-                    title = f"Help - /"
-                    if hasattr(target_command, "full_parent_name") and target_command.full_parent_name:
-                        title += f"{target_command.full_parent_name} "
-                    title += f"{target_command.name}"
-
-                    embed = discord.Embed(title=title, color=discord.Color.blurple())
-                    embed.description = target_command.description or "No description available."
-
-                    if hasattr(target_command, "children") and target_command.children:
-                        subcommands_text = "\n".join(
-                            f"/{target_command.name} {child.name} - {child.description or 'No description'}"
-                            for child in target_command.children
-                        )
-                        embed.add_field(name="Sub-Commands", value=subcommands_text, inline=False)
-
-                    elif hasattr(target_command, "options") and target_command.options:
-                        options_text = "\n".join(
-                            f"**{opt.name}**: {opt.description}" for opt in target_command.options
-                        )
-                        embed.add_field(name="Options", value=options_text, inline=False)
-                    current_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-                    embed.set_footer(text=f"Requested by {ctx.author} | {current_time}", icon_url=ctx.user.avatar.url)
-                    embed.set_thumbnail(url=self.bot.user.avatar.url)
-                    await ctx.respond(embed=embed)
-                else:
-                    await ctx.respond(f":x: Command `{command}` not found.", ephemeral=True)
+            if len(parts) > 1:
+                group_name = parts[0]
+                subcommand_name = parts[1]
+                # Find the command group first
+                for cmd in self.bot.application_commands:
+                    if cmd.name.lower() == group_name.lower() and hasattr(cmd, "children") and cmd.children:
+                        for child in cmd.children:
+                            if child.name.lower() == subcommand_name.lower():
+                                target_command = child
+                                break
+                        if target_command is None:
+                            await ctx.respond(f":x: Subcommand `{subcommand_name}` not found in command `{group_name}`.", ephemeral=True)
+                            return
+                        break
             else:
-                # List all commands except help if no specific command is provided.
-                commands_list = [
-                    f"/{cmd.name} - {cmd.description or 'No description'}"
-                    for cmd in self.bot.application_commands
-                    if cmd.name != "help"
-                ]
-                if not commands_list:
-                    commands_list.append("No commands available.")
+                # Search for a matching command or command group (without specifying sub-command)
+                for cmd in self.bot.application_commands:
+                    if cmd.name.lower() == command.lower():
+                        target_command = cmd
+                        break
 
-                embed = discord.Embed(title="Help - List of Commands ⚙️", color=discord.Color.blurple())
-                embed.description = "\n".join(commands_list)
+            if target_command:
+                # Prepare title including parent command name if available.
+                title = f"Help - /"
+                if hasattr(target_command, "full_parent_name") and target_command.full_parent_name:
+                    title += f"{target_command.full_parent_name} "
+                title += f"{target_command.name}"
+
+                embed = discord.Embed(title=title, color=discord.Color.blurple())
+                embed.description = target_command.description or "No description available."
+
+                if hasattr(target_command, "children") and target_command.children:
+                    subcommands_text = "\n".join(
+                        f"/{target_command.name} {child.name} - {child.description or 'No description'}"
+                        for child in target_command.children
+                    )
+                    embed.add_field(name="Sub-Commands", value=subcommands_text, inline=False)
+                # Otherwise, display command options if available.
+                elif hasattr(target_command, "options") and target_command.options:
+                    options_text = "\n".join(
+                        f"**{opt.name}**: {opt.description}" for opt in target_command.options
+                    )
+                    embed.add_field(name="Options", value=options_text, inline=False)
                 current_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
                 embed.set_footer(text=f"Requested by {ctx.author} | {current_time}", icon_url=ctx.user.avatar.url)
                 embed.set_thumbnail(url=self.bot.user.avatar.url)
                 await ctx.respond(embed=embed)
+            else:
+                await ctx.respond(f":x: Command `{command}` not found.", ephemeral=True)
+        else:
+            # List all commands except help if no specific command is provided.
+            commands_list = [
+                f"/{cmd.name} - {cmd.description or 'No description'}"
+                for cmd in self.bot.application_commands
+                if cmd.name != "help"
+            ]
+            if not commands_list:
+                commands_list.append("No commands available.")
+
+            embed = discord.Embed(title="Help - List of Commands ⚙️", color=discord.Color.blurple())
+            embed.description = "\n".join(commands_list)
+            current_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+            embed.set_footer(text=f"Requested by {ctx.author} | {current_time}", icon_url=ctx.user.avatar.url)
+            embed.set_thumbnail(url=self.bot.user.avatar.url)
+            await ctx.respond(embed=embed)
 
 def setup(bot):
     bot.add_cog(Help(bot))
