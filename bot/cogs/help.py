@@ -174,17 +174,6 @@ class Help(commands.Cog):
                        f"```"),
                 inline=False
             )
-    
-            # Command Usage Stats
-            usage_stats = self.bot.info.get_command_stats()  # Assuming this returns a string
-            if len(usage_stats) > 1024:  # Discord embed field value limit
-                usage_stats = usage_stats[:1021] + "..."
-                    
-            embed.add_field(
-                name="Command Usage Statistics (since last restart)",
-                value=f"```\n{usage_stats}```",
-                inline=False
-            )
             
             # Send response
             await ctx.defer()
