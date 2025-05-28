@@ -108,7 +108,7 @@ class SettingsView(discord.ui.View):
         modal = TemperatureModal()
         await interaction.response.send_modal(modal)
 
-    @discord.ui.button(label="", style=discord.ButtonStyle.grey, emoji="<:reload:1377257463317008466>")
+    @discord.ui.button(label="Reload", style=discord.ButtonStyle.grey, emoji="<:reload:1377257463317008466>")
     async def reload_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         user_settings = db.bot_settings.find_one({"user_id": interaction.user.id}) or {}
         temperature = user_settings.get("temperature", 0.6)
