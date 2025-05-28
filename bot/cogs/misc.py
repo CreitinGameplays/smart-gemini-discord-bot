@@ -52,7 +52,7 @@ class Misc(commands.Cog):
             await ctx.respond("<:info:1220157026739552296> You must be a donator to use the `/imagine` command.", ephemeral=True)
             return
 
-        await ctx.defer(ephemeral=True)
+        await ctx.defer()
         result = await imagine(prompt, ar, ctx.author.id)
         if result.get("is_error", 1) == 1:
             await ctx.respond(f"Error generating image: {result.get('img_error_msg', 'Unknown error')}", ephemeral=True)
@@ -60,7 +60,7 @@ class Misc(commands.Cog):
             filename = result.get("filename")
             file = discord.File(filename, filename=filename)
             view = DeleteView(ctx.author.id)
-            await ctx.respond("<:checkmark0:1246546819710849144> Here is your generated image:", file=file, view=view, ephemeral=False)
+            await ctx.respond("<:checkmark0:1246546819710849144> Here is your generated image:", file=file, view=view)
 
 def setup(bot: commands.Bot):
     bot.add_cog(Misc(bot))
