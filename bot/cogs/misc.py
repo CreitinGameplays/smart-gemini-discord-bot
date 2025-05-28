@@ -148,7 +148,6 @@ class Misc(commands.Cog):
             ]
             generate_config = types.GenerateContentConfig(response_mime_type="text/plain")
             response_text = ""
-            # Send an initial response.
             await ctx.respond("<a:gemini_sparkles:1321895555676504077> _ _")
             
             # Stream generation in a blocking call wrapped in run_in_executor.
@@ -164,8 +163,7 @@ class Misc(commands.Cog):
             for chunk in chunks:
                 text = chunk.text if hasattr(chunk, "text") else (chunk[0] if isinstance(chunk, (list, tuple)) else "")
                 response_text += text
-                # Update the original response only while text is short.
-                if len(response_text) < 1900:  # keep some safety margin
+                if len(response_text) < 1950:
                     await ctx.edit(content=response_text)
                 await asyncio.sleep(0.1)
                 
