@@ -20,7 +20,8 @@ class Help(commands.Cog):
     def __init__(self, bot: commands.Bot): 
         self.bot = bot
 
-    @discord.slash_command(name="ping", description="Shows the bot latency")
+    # user install yeah
+    @discord.slash_command(name="ping", description="Shows the bot latency", integration_types={discord.IntegrationType.guild_install, discord.IntegrationType.user_install})
     @commands.cooldown(1, 1, commands.BucketType.user)
     async def ping(self, ctx):
         start_time = time.perf_counter()
