@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from typing import Union
 import os
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
@@ -165,6 +166,78 @@ class Settings(commands.Cog):
         except Exception as e:
             await ctx.respond(f":x: An error occurred while retrieving your settings: {e}", ephemeral=True)
             print(f"Error in /settings command: {e}")
+
+    channel = discord.SlashCommandGroup("channel", "Manage channels where the bot is allowed to respond.")
+
+    @channel.command(name="add", description="Add a channel where the bot can respond.")
+    @commands.has_permissions(manage_guild=True)
+    async def add_channel(self, ctx: discord.ApplicationContext, channel: discord.TextChannel):
+        try:
+            result = db.bot_settings.update_one(
+                {"server_id": ctx.guild.id},
+                {"$addToSet": {"channels": channel.id}},
+                upsert=True
+            )
+            if result.modified_count == 0 and result.upserted_id is None:
+                await ctx.respond(":warning: This channel has already been added.", ephemeral=True)
+            else:
+                await ctx.respond(f"<a:verificadoTESTE:799380003426795561> <#{channel.id}> has been **added!**", ephemeral=True)
+        except Exception as e:
+            await ctx.respond(f":x: An error occurred while adding the channel: {e}", ephemeral=True)
+            print(f"Error in channel add command: {e}")
+
+    @add_channel.error
+    async def add_channel_error(self, ctx: discord.ApplicationContext, error):
+        if isinstance(error, commands.MissingPermissions):
+            await ctx.respond(":x: You do not have the required permissions to add channels (Manage Guild permission required).", ephemeral=True)
+        else:
+            await ctx.respond(f":x: An unexpected error occurred: {error}", ephemeral=True)
+
+    @channel.command(name="remove", description="Remove a channel from the allowed list.")
+    @commands.has_permissions(manage_guild=True)
+    async def remove_channel(self, ctx: discord.ApplicationContext, channel: discord.TextChannel):
+        try:
+            result = db.bot_settings.update_one(
+                {"server_id": ctx.guild.id},
+                {"$pull": {"channels": channel.id}}
+            )
+            if result.modified_count == 0:
+                await ctx.respond(":warning: This channel was not found in the list.", ephemeral=True)
+            else:
+                await ctx.respond(f"<a:verificadoTESTE:799380003426795561> <#{channel.id}> has been **removed!**", ephemeral=True)
+        except Exception as e:
+            await ctx.respond(f":x: An error occurred while removing the channel: {e}", ephemeral=True)
+            print(f"Error in channel remove command: {e}")
+
+    @remove_channel.error
+    async def remove_channel_error(self, ctx: discord.ApplicationContext, error):
+        if isinstance(error, commands.MissingPermissions):
+            await ctx.respond(":x: You do not have the required permissions to remove channels (Manage Guild permission required).", ephemeral=True)
+        else:
+            await ctx.respond(f":x: An unexpected error occurred: {error}", ephemeral=True)
+            
+    @channel.command(name="list", description="List allowed channels in this server.")
+    async def list_channels(self, ctx: discord.ApplicationContext):
+        try:
+            server_settings = db.bot_settings.find_one({"server_id": ctx.guild.id})
+            channels = server_settings.get("channels", []) if server_settings else []
+            if channels:
+                channel_mentions = ", ".join(f"<#{cid}>" for cid in channels)
+                description = channel_mentions
+            else:
+                description = "No channels have been added yet."
+            embed = discord.Embed(
+                title="List of Allowed Channels",
+                description=description,
+                color=discord.Colour.gold()
+            )
+            embed.set_thumbnail(url=self.bot.user.avatar.url)
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            embed.set_footer(text=f"Requested by {ctx.author.name} on {current_time}")
+            await ctx.respond(embed=embed)
+        except Exception as e:
+            await ctx.respond(f":x: An error occurred while listing channels: {e}", ephemeral=True)
+            print(f"Error in channel list command: {e}")
 
 def setup(bot: discord.Bot):
     bot.add_cog(Settings(bot))

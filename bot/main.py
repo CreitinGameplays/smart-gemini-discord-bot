@@ -346,16 +346,23 @@ async def handle_message(message):
     todayday2 = f'{today2.strftime("%A")}, {today2.month}/{today2.day}/{today2.year}'
     try:
         # database stuff
-        if user_settings:
-            model_id = user_settings.get("model", model_id)
-            temperature_setting = user_settings.get("temperature", 0.6)
-            mention_author = user_settings.get("mention_author", True)
-            mention_author = bool(mention_author) 
-        else: # if the user aint in the goddamn database for fucks sake
+        if not user_settings:
+            default_settings = {
+                "temperature": 0.6,
+                "model": model_id,
+                "mention_author": True,
+                "is_donator": False
+            }
             db.bot_settings.update_one(
                 {"user_id": message.author.id},
-                {"$set": {"temperature": 0.6, "model": model_id, "mention_author": True, "is_donator": False}}
-            ) # simpler approach
+                {"$setOnInsert": default_settings},
+                upsert=True
+            )
+            user_settings = default_settings
+        else:
+            model_id = user_settings.get("model", model_id)
+            temperature_setting = user_settings.get("temperature", 0.6)
+            mention_author = bool(user_settings.get("mention_author", True))
 
         channel_id = message.channel.id
         channel_history = [msg async for msg in message.channel.history(limit=MAX_CHAT_HISTORY_MESSAGES)]
