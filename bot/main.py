@@ -348,7 +348,7 @@ async def handle_message(message):
         mention_author = bool(mention_author) 
     else: # if the user aint in the goddamn database for fucks sake
         db.bot_settings.update_one(
-            {"user_id": author_id},
+            {"user_id": message.author.id},
             {"$set": {"temperature": 0.6, "model": None, "mention_author": True, "is_donator": None}}
         ) # simpler approach
 
