@@ -138,7 +138,7 @@ class Settings(commands.Cog):
     def __init__(self, bot: discord.Bot):
         self.bot = bot
     
-    @discord.slash_command(name="settings", description="Display and adjust your bot settings.")
+    @discord.slash_command(name="settings", description="Display and adjust your bot settings.", integration_types={discord.IntegrationType.guild_install, discord.IntegrationType.user_install})
     async def settings(self, ctx: discord.ApplicationContext):
         try:
             user_settings = db.bot_settings.find_one({"user_id": ctx.author.id}) or {}
