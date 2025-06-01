@@ -334,6 +334,10 @@ async def on_message(message):
             return
 
 async def handle_message(message):
+    # simple logging
+    log_channel_id = bot.get_channel(1221244563407114240)
+    await log_channel_id.send("```someone texted me!```")
+
     user_settings = None
     ### USER DATABASE SETTINGS (default values) ###
     temperature_setting = 0.6
