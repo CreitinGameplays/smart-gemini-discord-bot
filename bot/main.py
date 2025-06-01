@@ -302,8 +302,8 @@ def clean_result(result):
 @bot.event
 async def on_ready():
     if bot.auto_sync_commands:
-        await bot.sync_commands() # if we want slash commands
-    msg = discord.Game("Made by Creitin Gameplays! 🌟")
+        await bot.sync_commands() # since we want updated slash commands
+    msg = discord.Game("Back to life! Made by Creitin Gameplays! 🌟")
     await bot.change_presence(status=discord.Status.online, activity=msg)
     print(f'Logged in as {bot.user}!')
 
@@ -324,9 +324,8 @@ async def on_message(message):
             await asyncio.sleep(0.5)
             await restart_bot()
         else:
-            unauthorized = await message.reply(":x: You don't have permissions to run this command.")
+            print("user not allowed to run !r")
             await asyncio.sleep(5)
-            await unauthorized.delete()
     if bot.user in message.mentions or (message.reference and message.reference.resolved.author == bot.user):
         if message.channel.id in allowed_channels:
             await handle_message(message)
