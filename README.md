@@ -1,6 +1,7 @@
 # Smart Gemini Discord Bot
 
 A powerful Discord bot using [py-cord](https://github.com/Pycord-Development/pycord) and Google Gemini, with advanced web search, image, audio, and code execution features.
+
 [Add the bot!](https://discord.com/oauth2/authorize?client_id=1219407466526146661&scope=bot&permissions=277025704960)
 ---
 
