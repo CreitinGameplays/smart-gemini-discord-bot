@@ -128,11 +128,10 @@ class Help(commands.Cog):
             )
     
             # Add bot owner info
-            app_info = await self.bot.application_info()
             owner = self.bot.get_user(775678427511783434)
             embed.set_author(
                 name=f"Made with ❤️ by Creitin Gameplays",
-                icon_url=owner.avatar.url
+                icon_url="https://images-ext-1.discordapp.net/external/poGEsqc-FkutzAb_wSfmSRaAlApf6t83SsOWZkxqBnI/%3Fsize%3D4096/https/cdn.discordapp.com/avatars/775678427511783434/dd09831964deefa9cef83871146399a8.png"
             )
     
             embed.add_field(
