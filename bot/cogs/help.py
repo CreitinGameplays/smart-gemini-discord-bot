@@ -132,7 +132,7 @@ class Help(commands.Cog):
             owner = self.bot.get_user(775678427511783434)
             embed.set_author(
                 name=f"Made with ❤️ by Creitin Gameplays",
-                icon_url=owner.display_avatar.url
+                icon_url=owner.avatar.url
             )
     
             embed.add_field(
