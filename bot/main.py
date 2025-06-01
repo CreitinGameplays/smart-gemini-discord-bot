@@ -333,6 +333,8 @@ async def on_message(message):
             return
 
 async def handle_message(message):
+    if message.guild is None:
+        return
     # simple logging
     log_channel_id = bot.get_channel(1221244563407114240)
     await log_channel_id.send("```someone texted me!```")
