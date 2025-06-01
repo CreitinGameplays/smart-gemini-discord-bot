@@ -6,14 +6,14 @@ A powerful Discord bot using [py-cord](https://github.com/Pycord-Development/pyc
 
 ## Features
 
-- **Web Search** (Brave Search, Google, DuckDuckGo in legacy)
-- **Image Analysis** (analyze and describe images)
-- **Audio Transcription & Answering** (transcribe and answer audio files)
-- **Image Generation** (Imagen 3 , DALL·E 3 in legacy, FLUX.1 Schnell in legacy)
-- **Text File Reading** (analyze uploaded text/code files)
-- **Python Code Execution** (run code snippets securely)
+- **Web Search**
+- **Image Analysis**
+- **Audio Transcription**
+- **Image Generation**
+- **Text File Reading**
+- **Python Code Execution**
 - **YouTube Video Processing** (newer `main.py`)
-- **Per-user Settings** (model, temperature, mention, etc.)
+- **Per-user Settings** (model, temperature, mention, etc. in current `main.py`)
 - **And more!**
 
 ---
