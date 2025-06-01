@@ -435,7 +435,7 @@ async def handle_message(message):
         for m in channel_history:
             author_name = str(m.author)
             if author_name == "Gemini Pro#6900":
-                author_name = "Gemini:"
+                author_name = ""
             chat_contents.append(
                 types.Content(
                     role="user" if m.author.name != bot.user.name else "model",
