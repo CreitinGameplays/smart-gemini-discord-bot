@@ -131,7 +131,7 @@ class Help(commands.Cog):
             owner = self.bot.get_user(775678427511783434)
             embed.set_author(
                 name=f"Made with ❤️ by Creitin Gameplays",
-                icon_url="https://images-ext-1.discordapp.net/external/poGEsqc-FkutzAb_wSfmSRaAlApf6t83SsOWZkxqBnI/%3Fsize%3D4096/https/cdn.discordapp.com/avatars/775678427511783434/dd09831964deefa9cef83871146399a8.png"
+                icon_url="https://images-ext-1.discordapp.net/external/poGEsqc-FkutzAb_wSfmSRaAlApf6t83SsOWZkxqBnI/%3Fsize%3D4096/https/cdn.discordapp.com/avatars/775678427511783434/dd09831964deefa9cef83871146399a8.png" # long ass link
             )
     
             embed.add_field(
@@ -186,8 +186,6 @@ class Help(commands.Cog):
             # Send response
             await ctx.defer()
             msg = await ctx.respond(embed=embed, view=AddMe())
-            await asyncio.sleep(20)
-            await msg.delete()
     
         except Exception as e:
             logging.error("About command error:\n" + traceback.format_exc())
