@@ -30,7 +30,7 @@ class TemperatureModal(discord.ui.Modal):
         try:
             value = float(self.input_temperature.value)
             if not (0 <= value <= 2):
-                await interaction.response.send_message(":x: Temperature must be between 0 and 2.", ephemeral=True)
+                await interaction.response.send_message(":x: Temperature must be a float value between 0 and 2.", ephemeral=True)
                 return
             db.bot_settings.update_one(
                 {"user_id": interaction.user.id},
