@@ -309,6 +309,8 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
+    if message.guild is None:
+        return
     # DATABASE SETTINGS
     server_settings = db.bot_settings.find_one({"server_id": message.guild.id})
     allowed_channels = server_settings.get("channels", []) if server_settings else []
@@ -333,8 +335,6 @@ async def on_message(message):
             return
 
 async def handle_message(message):
-    if message.guild is None:
-        return
     # simple logging
     log_channel_id = bot.get_channel(1221244563407114240)
     await log_channel_id.send("```someone texted me!```")
