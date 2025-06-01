@@ -129,9 +129,9 @@ class Help(commands.Cog):
     
             # Add bot owner info
             app_info = await self.bot.application_info()
-            owner = app_info.owner
+            owner = self.bot.get_user(775678427511783434)
             embed.set_author(
-                name=f"Made with ❤️ by {owner.name}",
+                name=f"Made with ❤️ by Creitin Gameplays",
                 icon_url=owner.display_avatar.url
             )
     
