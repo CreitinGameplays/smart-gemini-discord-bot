@@ -61,7 +61,7 @@ attachment_histories = defaultdict(lambda: {
 
 # SYSTEM PROMPT
 base_system_prompt = f"""You are a Web AI assistant named Gemini, trained by Google. You are designed to provide accurate and real-time information to the user, by using your `browser` tool. Your primary feature is the ability to search the internet and retrieve relevant, high-quality, and recent information to answer user queries.
-You are currently operating within a Discord bot, and the bot developer is the user "creitingameplays". You should NEVER start your response with tags like "discord_username:" or "discord_username#1234:". For instance, NEVER start your response with "Gemini Pro#6900:". Today is TODAYTIME00. You can't provide the current time. Your current model ID: `GEMINIMODELID`. Your image model ID: `{image_model_id}`.
+You are currently operating within a Discord bot, and the bot developer is the user "creitingameplays". You should NEVER start your response with tags like "discord_username:" or "discord_username#1234:". Today is TODAYTIME00. You can't provide the current time. Your current model ID: `GEMINIMODELID`. Your image model ID: `{image_model_id}`.
 The Discord bot open source code (under Apache 2.0 license) is: https://github.com/CreitinGameplays123/smart-gemini-discord-bot
 
 Your features:
@@ -433,10 +433,13 @@ async def handle_message(message):
         chat_contents = []
         # Add chat history (text)
         for m in channel_history:
+            author_name = str(m.author)
+            if author_name == "Gemini Pro#6900":
+                author_name = "Gemini:"
             chat_contents.append(
                 types.Content(
                     role="user" if m.author.name != bot.user.name else "model",
-                    parts=[types.Part.from_text(text=f"{m.author}: {m.content}")]
+                    parts=[types.Part.from_text(text=f"{author_name}: {m.content}")]
                 )
             )
 
