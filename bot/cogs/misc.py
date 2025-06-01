@@ -134,6 +134,10 @@ class Misc(commands.Cog):
     )
     @option(name="prompt", description="The question or prompt to ask")
     async def ask(self, ctx: discord.ApplicationContext, prompt: str):
+        # logging
+        log_channel_id = self.bot.get_channel(1221244563407114240)
+        await log_channel_id.send("```someone texted me with /ask!```")
+
         await ctx.defer()
         # Retrieve user's model from settings or use default.
         user_settings = db.bot_settings.find_one({"user_id": ctx.author.id})
