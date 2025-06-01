@@ -598,15 +598,7 @@ async def handle_message(message):
                 if not new_chunks or not isinstance(new_chunks, list):
                     new_chunks = ["‎ "]
 
-                """
-                # Clean up the first chunk (remove unwanted prefixes)
-                if new_chunks:
-                    new_chunks[0] = new_chunks[0].replace("Gemini:", "", 1)
-                    new_chunks[0] = new_chunks[0].replace("Language Model#3241:", "", 1)
-                """
-
                 new_chunks = ["‎ " if chunk.strip() == "" else chunk for chunk in new_chunks]
-
                 # Update messages with each chunk
                 for i in range(len(new_chunks)):
                     try:
@@ -647,12 +639,7 @@ async def handle_message(message):
                     if chunk.text:
                         full_response += chunk.text
                         new_chunks = split_msg(full_response)
-                        """
-                        # Clean up the first chunk.
-                        if new_chunks:
-                            new_chunks[0] = new_chunks[0].replace("Gemini:", "", 1)
-                            new_chunks[0] = new_chunks[0].replace("Language Model#3241:", "", 1)
-                        """
+
                         for i in range(len(new_chunks)):
                             if i < len(message_chunks):
                                 await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
