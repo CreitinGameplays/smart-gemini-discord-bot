@@ -1,94 +1,86 @@
 # Smart Gemini Discord Bot
 
-This is a Discord bot built using the [py-cord](https://github.com/Pycord-Development/pycord)
+A powerful Discord bot using [py-cord](https://github.com/Pycord-Development/pycord) and Google Gemini, with advanced web search, image, audio, and code execution features.
+[Add the bot!](https://discord.com/oauth2/authorize?client_id=1219407466526146661&scope=bot&permissions=277025704960)
+---
 
-## It can
+## Features
 
-- Web Search
-- Image Analysis
-- Audio Transcription
-- Generate images
-- Read text files
-- Execute Python code snippet
-- And more!
-  
+- **Web Search** (Brave Search, Google, DuckDuckGo in legacy)
+- **Image Analysis** (analyze and describe images)
+- **Audio Transcription & Answering** (transcribe and answer audio files)
+- **Image Generation** (Imagen 3 , DALL·E 3 in legacy, FLUX.1 Schnell in legacy)
+- **Text File Reading** (analyze uploaded text/code files)
+- **Python Code Execution** (run code snippets securely)
+- **YouTube Video Processing** (newer `main.py`)
+- **Per-user Settings** (model, temperature, mention, etc.)
+- **And more!**
+
+---
+
 ## Requirements
-- Your bot token (Get it on Discord Developers Portal)
-- ~~Groq API key (it's free)~~ v3.5 and up doesn't need this
-- Google AI Studio API key (it's also free)
-- ~~HuggingFace token (free)~~ v3.5 and up doesn't need this
-- A functional human brain (expensive)
 
-`v3.5` and above:
-- Brave Search API key (free but requires cc)
-- New: Google Cloud account with Imagen 3 access (needs 💵)
+- Discord Bot Token ([Discord Developer Portal](https://discord.com/developers/applications))
+- Google AI Studio API Key
+- For `v3.5+`:
+  - Brave Search API Key (free, requires credit card)
+  - Google Cloud account with Imagen 3 access (paid)
+- For legacy/experimental versions:
+  - (Optional) Groq API Key
+  - (Optional) HuggingFace Token
 
-`v4.0`:
-- Process YouTube videos (native, free)
-  
-Note: Files with `dalle` in the name uses DALL•E 3 for generating images, means you'll need an OpenAI API Key + waste some money with DALL•E 3. The rest uses free image generation model, except `v3.5.py` and up.
+> **Note:**  
+> - Files with `dalle` in the name use DALL·E 3 (requires OpenAI API Key, paid).
+> - `v3.5.py` and above do **not** require Groq or HuggingFace tokens.
 
-`v3.5.py` and above do not require Groq API Key.
+---
 
-## Setup Google Cloud account (v3.5.py and up)
-- In terminal, run the following commands:
-```
+## Setup: Google Cloud (for Imagen 3, v3.5+)
+
+```sh
 snap install google-cloud-cli
-```
-
-```
 gcloud auth application-default login
-```
-- Then copy the link in terminal -> Choose your Google Cloud account -> Allow everything -> Copy the code it will display -> Go back to the terminal and paste the code -> then run:
-```
 gcloud config set project YOUR_GOOGLE_CLOUD_PROJECT_ID
 ```
-- Done!
+
+---
 
 ## Installation
 
-1. Clone the repository:
+1. **Clone the repository:**
     ```sh
     git clone https://github.com/CreitinGameplays123/smart-gemini-discord-bot.git
     cd smart-gemini-discord-bot
     ```
 
-2. Install the required Python packages:
+2. **Install dependencies:**
     ```sh
     pip install -r requirements.txt
     ```
 
-3. Set up environment variables by creating a `.env` file in the project directory and adding your keys:
+3. **Configure environment variables:**  
+   Create a `.env` file in the project root:
     ```sh
     TOKEN=your_discord_bot_token
     GEMINI_KEY=your_gemini_api_key
-    GROQ_KEY=your_groq_api_key
-    HF_TOKEN=your_hf_token
     BRAVE_TOKEN=your_brave_token
     GCP_PROJECT=your_google_cloud_project
+    # (Optional for legacy) GROQ_KEY=your_groq_api_key
+    # (Optional for legacy) HF_TOKEN=your_hf_token
     ```
+
+---
 
 ## Usage
 
 Run the bot:
 ```sh
-chmod +x start.sh
-./start.sh
+chmod +x bot/start.sh
+./bot/start.sh
 ```
 
-## Bot Commands
-
-- `!del` - Deletes the current channel chat history from the JSON file (not available in `v3.2.py`).
-- `!k` - Kills the bot process.
-- `!r` - Restarts the bot.
-- `!imgdel` - Deletes the current channel image from the `attachments` folder.
-- `!audiodel` - Deletes the current channel audio from the `attachments` folder.
-- `!txtdel` - Deletes the current channel text from the `attachments` folder.
-- `!h` - Displays the help command with available bot commands.
+---
 
 ## License
 
 This project is licensed under the Apache-2.0 license. See the [LICENSE](LICENSE) file for details.
-
-
-
