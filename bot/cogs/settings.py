@@ -30,7 +30,7 @@ class TemperatureModal(discord.ui.Modal):
         try:
             value = float(self.input_temperature.value)
             if not (0 <= value <= 2):
-                await interaction.response.send_message(":x: Temperature must be a float value between 0 and 2.", ephemeral=True)
+                await interaction.response.send_message("<:alert:1220162599014895777> Temperature must be a **float value between 0 and 2**.", ephemeral=True)
                 return
             db.bot_settings.update_one(
                 {"user_id": interaction.user.id},
@@ -39,7 +39,7 @@ class TemperatureModal(discord.ui.Modal):
             )
             await interaction.response.send_message(f"<a:verificadoTESTE:799380003426795561> Temperature set to {value}.", ephemeral=True)
         except Exception as e:
-            await interaction.response.send_message(f":x: Error setting temperature: {e}", ephemeral=True)
+            await interaction.response.send_message(f"<:error_icon:1295348741058068631> Error setting temperature: {e}", ephemeral=True)
 
 # Dropdown for selecting Gemini model.
 class ModelDropdown(discord.ui.Select):
@@ -164,7 +164,7 @@ class Settings(commands.Cog):
             view = SettingsView(self.bot)
             await ctx.respond(embed=embed, view=view, ephemeral=True)
         except Exception as e:
-            await ctx.respond(f":x: An error occurred while retrieving your settings: {e}", ephemeral=True)
+            await ctx.respond(f"<:error_icon:1295348741058068631> An error occurred while retrieving your settings: {e}", ephemeral=True)
             print(f"Error in /settings command: {e}")
 
     channel = discord.SlashCommandGroup("channel", "Manage channels where the bot is allowed to respond.")
@@ -179,19 +179,19 @@ class Settings(commands.Cog):
                 upsert=True
             )
             if result.modified_count == 0 and result.upserted_id is None:
-                await ctx.respond(":warning: This channel has already been added.", ephemeral=True)
+                await ctx.respond("<:alert:1220162599014895777> This channel has already been added.", ephemeral=True)
             else:
                 await ctx.respond(f"<a:verificadoTESTE:799380003426795561> <#{channel.id}> has been **added!**", ephemeral=True)
         except Exception as e:
-            await ctx.respond(f":x: An error occurred while adding the channel: {e}", ephemeral=True)
+            await ctx.respond(f"<:error_icon:1295348741058068631> An error occurred while adding the channel: {e}", ephemeral=True)
             print(f"Error in channel add command: {e}")
 
     @add_channel.error
     async def add_channel_error(self, ctx: discord.ApplicationContext, error):
         if isinstance(error, commands.MissingPermissions):
-            await ctx.respond(":x: You do not have the required permissions to add channels (Manage Guild permission required).", ephemeral=True)
+            await ctx.respond("<:alert:1220162599014895777> You do not have the required permissions to add channels (Manage Guild permission required).", ephemeral=True)
         else:
-            await ctx.respond(f":x: An unexpected error occurred: {error}", ephemeral=True)
+            await ctx.respond(f"<:error_icon:1295348741058068631> An unexpected error occurred: {error}", ephemeral=True)
 
     @channel.command(name="remove", description="Remove a channel from the allowed list.")
     @commands.has_permissions(manage_guild=True)
@@ -202,19 +202,19 @@ class Settings(commands.Cog):
                 {"$pull": {"channels": channel.id}}
             )
             if result.modified_count == 0:
-                await ctx.respond(":warning: This channel was not found in the list.", ephemeral=True)
+                await ctx.respond("<:alert:1220162599014895777> This channel was not found in the list.", ephemeral=True)
             else:
                 await ctx.respond(f"<a:verificadoTESTE:799380003426795561> <#{channel.id}> has been **removed!**", ephemeral=True)
         except Exception as e:
-            await ctx.respond(f":x: An error occurred while removing the channel: {e}", ephemeral=True)
+            await ctx.respond(f"<:error_icon:1295348741058068631> An error occurred while removing the channel: {e}", ephemeral=True)
             print(f"Error in channel remove command: {e}")
 
     @remove_channel.error
     async def remove_channel_error(self, ctx: discord.ApplicationContext, error):
         if isinstance(error, commands.MissingPermissions):
-            await ctx.respond(":x: You do not have the required permissions to remove channels (Manage Guild permission required).", ephemeral=True)
+            await ctx.respond("<:alert:1220162599014895777> You do not have the required permissions to remove channels (Manage Guild permission required).", ephemeral=True)
         else:
-            await ctx.respond(f":x: An unexpected error occurred: {error}", ephemeral=True)
+            await ctx.respond(f"<:error_icon:1295348741058068631> An unexpected error occurred: {error}", ephemeral=True)
             
     @channel.command(name="list", description="List allowed channels in this server.")
     async def list_channels(self, ctx: discord.ApplicationContext):
@@ -236,7 +236,7 @@ class Settings(commands.Cog):
             embed.set_footer(text=f"Requested by {ctx.author.name} on {current_time}")
             await ctx.respond(embed=embed)
         except Exception as e:
-            await ctx.respond(f":x: An error occurred while listing channels: {e}", ephemeral=True)
+            await ctx.respond(f"<:error_icon:1295348741058068631> An error occurred while listing channels: {e}", ephemeral=True)
             print(f"Error in channel list command: {e}")
 
 def setup(bot: discord.Bot):

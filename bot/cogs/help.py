@@ -189,7 +189,7 @@ class Help(commands.Cog):
     
         except Exception as e:
             logging.error("About command error:\n" + traceback.format_exc())
-            await ctx.respond(f":x: An error occurred: `{e}`")
+            await ctx.respond(f"<:error_icon:1295348741058068631> An error occurred: `{e}`")
 
 def setup(bot):
     bot.add_cog(Help(bot))

@@ -179,7 +179,7 @@ class Misc(commands.Cog):
             for chunk in response_chunks[1:]:
                 await ctx.followup.send(chunk)
         except Exception as e:
-            await ctx.respond(f":x: An error occurred: {e}", ephemeral=True)
+            await ctx.respond(f"<:error_icon:1295348741058068631> An error occurred: {e}", ephemeral=True)
 
 def setup(bot: commands.Bot):
     bot.add_cog(Misc(bot))

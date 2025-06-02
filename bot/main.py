@@ -739,7 +739,7 @@ async def handle_message(message):
         logger.error("An error occurred:\n" + traceback.format_exc())
         print(f'Error handling message: {e}')
         if bot_message:
-            await bot_message.edit(content=f'An error occurred: `{e}`')
+            await bot_message.edit(content=f'<:error_icon:1295348741058068631> An error occurred: `{e}`')
         await asyncio.sleep(6)
         await bot_message.delete()
 
