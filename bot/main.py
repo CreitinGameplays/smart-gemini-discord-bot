@@ -693,8 +693,6 @@ async def handle_message(message):
                     print(f"Error finalizing message {i}: {e}")
     """
 
-        # Replace your current response_stream processing loop with this:
-
         last_chunk_time = time.time()
         message_chunks = []
         full_response = ""
