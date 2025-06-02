@@ -15,6 +15,7 @@ from logging.handlers import RotatingFileHandler
 import traceback
 import mimetypes
 from pydub import AudioSegment
+import itertools
 # MongoDB
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
@@ -584,58 +585,27 @@ async def handle_message(message):
             config=config
         )
 
+        response_iter = iter(response_stream)
+        try:
+            import asyncio
+            first_chunk = await asyncio.wait_for(
+                asyncio.to_thread(next, response_iter), timeout=60
+            )
+        except asyncio.TimeoutError:
+            await bot_message.edit(content="<:aw_snap:1379058439963017226> Sorry, the API did not return any response for over 60 seconds. Please try again.")
+            await asyncio.sleep(8)
+            await bot_message.delete()
+            return
+
         full_response = ""
         message_chunks = []
         post_function_call = False
         aggregated_wsearch_results = ""
 
-        async def process_response_text(response, message, bot_message, message_chunks):
-            nonlocal full_response
-            try:
-                # Only accumulate the text part of the response; ignore function_call fields.
-                text_part = response.text if hasattr(response, 'text') and response.text else ""
-                if text_part:
-                    full_response += text_part
-                new_chunks = split_msg(full_response) if full_response else []
-                if not new_chunks or not isinstance(new_chunks, list):
-                    new_chunks = ["‎ "]
-
-                new_chunks = ["‎ " if chunk.strip() == "" else chunk for chunk in new_chunks]
-                # Update messages with each chunk
-                for i in range(len(new_chunks)):
-                    try:
-                        if i < len(message_chunks):
-                            if message_chunks[i]:
-                                await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
-                                await asyncio.sleep(0.8)
-                        else:
-                            if i == 0 and bot_message:
-                                await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
-                                await asyncio.sleep(0.8)
-                                message_chunks.append(bot_message)
-                            else:
-                                new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>", mention_author=mention_author)
-                                await asyncio.sleep(0.8)
-                                message_chunks.append(new_msg)
-                    except Exception as e:
-                        print(f"Error updating message {i}: {e}")
-                        continue
-
-                # Finalize messages by removing the animation icon
-                for i in range(len(message_chunks)):
-                    try:
-                        if i < len(new_chunks) and message_chunks[i]:
-                            await message_chunks[i].edit(content=new_chunks[i])
-                    except Exception as e:
-                        print(f"Error finalizing message {i}: {e}")
-                return new_chunks
-            except Exception as e:
-                print(f"Error in process_response_text: {e}")
-                return None
-
+        chunks_to_process = itertools.chain([first_chunk], response_iter)
         # Process Gemini response
         while True:
-            for chunk in response_stream:
+            for chunk in chunks_to_process:
                 try:
                     # If text is included, accumulate and update messages.
                     if chunk.text:
