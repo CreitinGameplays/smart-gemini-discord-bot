@@ -641,7 +641,7 @@ async def handle_message(message):
                 await bot_message.edit(content="<:aw_snap:1379058439963017226> Sorry, the API did not return any data for over 60 seconds. Please try again.")
                 await asyncio.sleep(8)
                 await bot_message.delete()
-            for chunk in response_stream:
+            for chunk in check:
                 try:
                     # If text is included, accumulate and update messages.
                     if chunk.text:
