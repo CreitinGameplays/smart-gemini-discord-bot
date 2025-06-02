@@ -300,10 +300,12 @@ def clean_result(result):
 
 async def check_response_timeout(bot_message, timeout=60):
     await asyncio.sleep(timeout)
-    # Check if the bot message is still the initial waiting message.
+    # Check if the bot message is still the initial waiting message
     if bot_message and bot_message.content.strip() == "<a:gemini_sparkles:1321895555676504077> _ _":
         try:
-            await bot_message.edit(content="<:error_icon:1295348741058068631> An error occurred: Response timeout. Please try again later.")
+            await bot_message.edit(content="<:aw_snap:1379058439963017226> Sorry, the API did not return any data for over 60 seconds. Please try again.")
+            await asyncio.sleep(8)
+            await bot_message.delete()
         except Exception as e:
             print(f"Timeout error update failed: {e}")
 
