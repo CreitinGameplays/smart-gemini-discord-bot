@@ -8,6 +8,9 @@ import asyncio
 import traceback
 import logging
 
+# get the project version
+from bot import version
+
 class AddMe(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -138,6 +141,11 @@ class Help(commands.Cog):
                 name="Py-cord version",
                 value=f"`{discord.__version__}`",
                 inline=True
+            )
+            embed.add_field(
+                name="Bot Version",
+                value=f"{version.__version__}",
+                inline=False
             )
     
             # Shard Information
