@@ -587,7 +587,6 @@ async def handle_message(message):
 
         response_iter = iter(response_stream)
         try:
-            import asyncio
             first_chunk = await asyncio.wait_for(
                 asyncio.to_thread(next, response_iter), timeout=60
             )
