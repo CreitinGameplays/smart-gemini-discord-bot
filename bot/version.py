@@ -1,1 +1,1 @@
-__version__ = "v0.0.0"  # Fresh start
+__version__ = "v1.0.0"  # Fresh start
