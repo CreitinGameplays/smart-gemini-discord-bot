@@ -28,7 +28,7 @@ A powerful Discord bot using [py-cord](https://github.com/Pycord-Development/pyc
 
 ---
 
-> Note
+> Note:
 > `deprecated code` is a folder of old codes that won't be more maintained
 
 ## Setup: Google Cloud (for Imagen 3)
