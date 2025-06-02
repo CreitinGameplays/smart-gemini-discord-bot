@@ -237,7 +237,7 @@ class PythonResultView(discord.ui.View):
     def __init__(self, result):
         super().__init__(timeout=None)
         self.result = result
-    @discord.ui.button(label="Show Code", style=discord.ButtonStyle.grey, emoji="⚙️", custom_id="persistent:python_result_show_code")
+    @discord.ui.button(label="Show Code", style=discord.ButtonStyle.grey, emoji="⚙️")
     async def button_callback(self, button, interaction):
         code_embed = discord.Embed(
             title="Python Code",
@@ -251,7 +251,7 @@ class WebSearchResultView(discord.ui.View):
     def __init__(self, results):
         super().__init__(timeout=None)
         self.results = results
-    @discord.ui.button(label="Sources", style=discord.ButtonStyle.grey, emoji="🌐", custom_id="persistent:websearch_result_show_sources")
+    @discord.ui.button(label="Sources", style=discord.ButtonStyle.grey, emoji="🌐")
     async def show_websites(self, button: discord.ui.Button, interaction: discord.Interaction):
         import re
         urls = re.findall(r'Link:\s*(\S+)', self.results)
@@ -316,8 +316,6 @@ async def check_response_timeout(bot_message, timeout=60):
 async def on_ready():
     if bot.auto_sync_commands:
         await bot.sync_commands() # since we want updated slash commands
-    bot.add_view(PythonResultView())
-    bot.add_view(WebSearchResultView())
     msg = discord.Game("Back to life! Made by Creitin Gameplays! 🌟")
     await bot.change_presence(status=discord.Status.online, activity=msg)
     print(f'Logged in as {bot.user}!')
