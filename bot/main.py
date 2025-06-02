@@ -588,7 +588,7 @@ async def handle_message(message):
         message_chunks = []
         post_function_call = False
         aggregated_wsearch_results = ""
-        """
+
         # Process Gemini response
         while True:
             for chunk in response_stream:
@@ -685,131 +685,6 @@ async def handle_message(message):
                 break
 
         # Finalize all messages by removing the animation icon.
-        if message_chunks:
-            for i, msg in enumerate(message_chunks):
-                try:
-                    await msg.edit(content=split_msg(full_response)[i])
-                except Exception as e:
-                    print(f"Error finalizing message {i}: {e}")
-    """
-        last_chunk_time = time.time()
-        message_chunks = []
-        full_response = ""
-        aggregated_wsearch_results = ""
-        response_stream_iter = iter(response_stream)
-
-        while True:
-            remaining = 60 - (time.time() - last_chunk_time)
-            if remaining <= 0:
-                await bot_message.edit(content="<:aw_snap:1379058439963017226> Sorry, the API did not return any response for over 60 seconds. Please try again.")
-                await asyncio.sleep(8)
-                await bot_message.delete()
-                break
-
-            # Create a task to get the next chunk and a timer task.
-            next_chunk_task = asyncio.to_thread(next, response_stream)
-            timer_task = asyncio.create_task(asyncio.sleep(remaining))
-            done, pending = await asyncio.wait({next_chunk_task, timer_task}, return_when=asyncio.FIRST_COMPLETED)
-            
-            if timer_task in done:
-                # Timeout: no new chunk within remaining period.
-                for task in pending:
-                    task.cancel()
-                await bot_message.edit(content="<:aw_snap:1379058439963017226> Sorry, the API did not return any response for over 60 seconds. Please try again.")
-                await asyncio.sleep(8)
-                await bot_message.delete()
-                break
-            else:
-                # New chunk received; reset timer.
-                chunk = next_chunk_task.result()
-                last_chunk_time = time.time()
-                
-                try:
-                    if chunk.text:
-                        full_response += chunk.text
-                        new_chunks = split_msg(full_response)
-                        for i in range(len(new_chunks)):
-                            if i < len(message_chunks):
-                                await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
-                                await asyncio.sleep(0.8)
-                            else:
-                                if i == 0:
-                                    await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
-                                    await asyncio.sleep(0.8)
-                                    message_chunks.append(bot_message)
-                                else:
-                                    new_msg = await message.reply(new_chunks[i] + " <a:generatingslow:1246630905632653373>", mention_author=mention_author)
-                                    await asyncio.sleep(0.8)
-                                    message_chunks.append(new_msg)
-                    if chunk.function_calls:
-                        fn = chunk.function_calls[0]
-                        current_response = full_response  # Save text received so far
-                        print(fn)
-                        if fn.name == "python":
-                            code_text = fn.args.get('code_text', '')
-                            await bot_message.edit(content=f"-# Executing... <a:brackets:1300121114869235752>")
-                            python_result = exec_python(code_text)
-                            python_view = PythonResultView(result=code_text)
-                            await bot_message.edit(content=f"-# Done <a:brackets:1300121114869235752>", view=python_view)
-                            cleaned_result = clean_result(python_result)
-                            function_response_part = types.Part.from_function_response(
-                                name="python",
-                                response={"result": cleaned_result}
-                            )
-                        elif fn.name == "browser":
-                            q = fn.args.get('q', '')
-                            num = fn.args.get('num', 15)
-                            await bot_message.edit(content=f'-# Searching \'{q}\' <a:searchingweb:1246248294322147489>')
-                            wsearch_result = await browser(q, num)
-                            aggregated_wsearch_results += wsearch_result
-                            web_view = WebSearchResultView(results=aggregated_wsearch_results)
-                            await bot_message.edit(content='-# Reading results... <a:searchingweb:1246248294322147489>', view=web_view)
-                            function_response_part = types.Part.from_function_response(
-                                name="browser",
-                                response={"result": f"USE_CITATION=YES\nONLINE_RESULTS={wsearch_result}"}
-                            )
-                        elif fn.name == "imagine":
-                            prompt = fn.args.get('prompt', '')
-                            ar = fn.args.get('ar', '1:1')
-                            await bot_message.edit(content="-# Generating Image... <a:gemini_sparkles:1321895555676504077>")
-                            imagine_result = await imagine(prompt, ar, message.author.id)
-                            if imagine_result["is_error"] == 1:
-                                await bot_message.edit(content='-# An Error Occurred <:error_icon:1295348741058068631>')
-                                function_response_part = types.Part.from_function_response(
-                                    name="imagine",
-                                    response={"result": f"IMAGE_GENERATED=NO\nERROR_MSG=Error occurred: {imagine_result['img_error_msg']}"}
-                                )
-                            else:
-                                await bot_message.edit(content="-# Done <:checkmark:1220809843414270102>")
-                                await message.reply(file=discord.File(imagine_result["filename"]), mention_author=mention_author)
-                                os.remove(imagine_result["filename"])
-                                function_response_part = types.Part.from_function_response(
-                                    name="imagine",
-                                    response={"result": "IMAGE_GENERATED=YES"}
-                                )
-                        chat_contents.append(types.Content(
-                            role="model",
-                            parts=[types.Part(function_call=fn)]
-                        ))
-                        chat_contents.append(types.Content(
-                            role="user",
-                            parts=[function_response_part]
-                        ))
-                        response_stream = client.models.generate_content_stream(
-                            model=model_id,
-                            contents=chat_contents,
-                            config=config
-                        )
-                        response_stream_iter = iter(response_stream)
-                        full_response = current_response
-                        continue
-                except json.JSONDecodeError as e:
-                    logger.error(f"Skipping invalid JSON chunk: {e}")
-                    continue
-                except Exception as e:
-                    print(f"Error processing chunk: {e}")
-                    continue
-
         if message_chunks:
             for i, msg in enumerate(message_chunks):
                 try:
