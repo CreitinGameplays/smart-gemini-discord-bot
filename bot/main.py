@@ -692,7 +692,6 @@ async def handle_message(message):
                 except Exception as e:
                     print(f"Error finalizing message {i}: {e}")
     """
-
         last_chunk_time = time.time()
         message_chunks = []
         full_response = ""
