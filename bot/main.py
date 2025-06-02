@@ -302,7 +302,6 @@ async def check_response_timeout(bot_message, timeout=60):
     await asyncio.sleep(timeout)
     try:
         fresh_message = await bot_message.channel.fetch_message(bot_message.id)
-        # Consider the message unchanged if it has never been edited or was edited within 5 seconds of creation.
         creation = fresh_message.created_at
         edited = fresh_message.edited_at if fresh_message.edited_at else creation
         if (edited - creation).total_seconds() < 5:
