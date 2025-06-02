@@ -647,6 +647,7 @@ async def handle_message(message):
                     # If text is included, accumulate and update messages.
                     if chunk.text:
                         full_response += chunk.text
+                        last_chunk_time = time.time()
                         new_chunks = split_msg(full_response)
 
                         for i in range(len(new_chunks)):
