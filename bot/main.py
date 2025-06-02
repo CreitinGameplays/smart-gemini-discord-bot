@@ -583,10 +583,6 @@ async def handle_message(message):
             contents=chat_contents,
             config=config
         )
-        try:
-            chunk = await asyncio.wait_for(asyncio.to_thread(next, response_stream), timeout=60)
-        except asyncio.TimeoutError:
-            await bot_message.edit(content="<:aw_snap:1379058439963017226> Sorry, the API did not return any data for over 60 seconds. Please try again.")
 
         full_response = ""
         message_chunks = []
@@ -595,8 +591,7 @@ async def handle_message(message):
 
         # Process Gemini response
         while True:
-            #for chunk in response_stream:
-            if chunk:
+            for chunk in response_stream:
                 try:
                     # If text is included, accumulate and update messages.
                     if chunk.text:
