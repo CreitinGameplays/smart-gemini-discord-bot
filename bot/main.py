@@ -110,7 +110,7 @@ You can execute Python code when needed. For example, you can use this tool to d
 Example:
     1. "Count r's in strawberry word using code."
     2. "What is 38 * 4 - 5?"
-Always put print() in the code! Without print() you can't get the output! You CANNOT put codeblock in this, if you put it the code execution WILL FAIL.
+Always put print() in the code! Without print() you can't get the output! You CANNOT put codeblock in this, if you put it the code execution WILL FAIL. The code must be generated as a valid JSON!
 * DON'T EXECUTE DANGEROUS CODE!
 
 # YOUTUBE VIDEO INSTRUCTIONS
@@ -161,7 +161,7 @@ tool_python = types.Tool(function_declarations=[
         "parameters": {
             "type": "object",
             "properties": {
-                "code_text": {"type": "string", "description": "Write the Python code here (string)."}
+                "code_text": {"type": "string", "description": "Write the Python code here."}
             },
             "required": ["code_text"]
         }
