@@ -298,6 +298,15 @@ def clean_result(result):
             pass
     return result
 
+async def check_response_timeout(bot_message, timeout=60):
+    await asyncio.sleep(timeout)
+    # Check if the bot message is still the initial waiting message.
+    if bot_message and bot_message.content.strip() == "<a:gemini_sparkles:1321895555676504077> _ _":
+        try:
+            await bot_message.edit(content="<:error_icon:1295348741058068631> An error occurred: Response timeout. Please try again later.")
+        except Exception as e:
+            print(f"Timeout error update failed: {e}")
+
 # Discord events
 @bot.event
 async def on_ready():
@@ -379,6 +388,8 @@ async def handle_message(message):
         async with message.channel.typing():
             await asyncio.sleep(1)
             bot_message = await message.reply('<a:gemini_sparkles:1321895555676504077> _ _', mention_author=mention_author)
+            # Start the timeout check concurrently.
+            asyncio.create_task(check_response_timeout(bot_message))
             await asyncio.sleep(0.1)
         user_message = message.content.replace(f'<@{bot.user.id}>', '').strip()
 
