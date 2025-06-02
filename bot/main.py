@@ -390,7 +390,7 @@ async def handle_message(message):
         async with message.channel.typing():
             await asyncio.sleep(1)
             bot_message = await message.reply('<a:gemini_sparkles:1321895555676504077> _ _', mention_author=mention_author)
-            asyncio.create_task(check_response_timeout(bot_message))
+            #asyncio.create_task(check_response_timeout(bot_message))
             await asyncio.sleep(0.1)
         user_message = message.content.replace(f'<@{bot.user.id}>', '').strip()
 
