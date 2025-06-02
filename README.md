@@ -13,9 +13,9 @@ A powerful Discord bot using [py-cord](https://github.com/Pycord-Development/pyc
 - **Image Generation**
 - **Text File Reading**
 - **Python Code Execution**
-- **YouTube Video Processing** (newer `main.py`)
-- **Per-user Settings** (model, temperature, mention, etc. in current `main.py`)
-- **And more!**
+- **YouTube Video Processing**
+- **Per-user Settings** (model, temperature, mention, etc.)
+- **And more soon!**
 
 ---
 
@@ -23,20 +23,15 @@ A powerful Discord bot using [py-cord](https://github.com/Pycord-Development/pyc
 
 - Discord Bot Token ([Discord Developer Portal](https://discord.com/developers/applications))
 - Google AI Studio API Key
-- For `v3.5+`:
-  - Brave Search API Key (free, requires credit card)
-  - Google Cloud account with Imagen 3 access (paid)
-- For legacy/experimental versions:
-  - (Optional) Groq API Key
-  - (Optional) HuggingFace Token
-
-> **Note:**  
-> - Files with `dalle` in the name use DALL·E 3 (requires OpenAI API Key, paid).
-> - `v3.5.py` and above do **not** require Groq or HuggingFace tokens.
+- Brave Search API Key (free, requires credit card)
+- Google Cloud account with Imagen 3 access (paid)
 
 ---
 
-## Setup: Google Cloud (for Imagen 3, v3.5+)
+> Note
+> `deprecated code` is a folder of old codes that won't be more maintained
+
+## Setup: Google Cloud (for Imagen 3)
 
 ```sh
 snap install google-cloud-cli
@@ -66,8 +61,6 @@ gcloud config set project YOUR_GOOGLE_CLOUD_PROJECT_ID
     GEMINI_KEY=your_gemini_api_key
     BRAVE_TOKEN=your_brave_token
     GCP_PROJECT=your_google_cloud_project
-    # (Optional for legacy) GROQ_KEY=your_groq_api_key
-    # (Optional for legacy) HF_TOKEN=your_hf_token
     ```
 
 ---
