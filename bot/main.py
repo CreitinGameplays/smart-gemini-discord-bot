@@ -15,7 +15,6 @@ from logging.handlers import RotatingFileHandler
 import traceback
 import mimetypes
 from pydub import AudioSegment
-import itertools
 # MongoDB
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
@@ -585,27 +584,26 @@ async def handle_message(message):
             config=config
         )
 
-        response_iter = iter(response_stream)
-        try:
-            first_chunk = asyncio.wait_for(asyncio.to_thread(next, response_stream), timeout=60)
-        except asyncio.TimeoutError:
-            await bot_message.edit(content="<:aw_snap:1379058439963017226> Sorry, the API did not return any response for over 60 seconds. Please try again.")
-            await asyncio.sleep(8)
-            await bot_message.delete()
-            return
-
         full_response = ""
         message_chunks = []
         post_function_call = False
         aggregated_wsearch_results = ""
 
-        chunks_to_process = itertools.chain([first_chunk], response_iter)
+        last_chunk_time = time.time()
+        timeout_occurred = False
         # Process Gemini response
         while True:
-            for chunk in chunks_to_process:
+            for chunk in response_stream:
+                if time.time() - last_chunk_time > 60:
+                    await bot_message.edit(content="<:aw_snap:1379058439963017226> Sorry, the API did not return any response for over 60 seconds. Please try again.")
+                    await asyncio.sleep(8)
+                    await bot_message.delete()
+                    timeout_occurred = True
+                    break
                 try:
                     # If text is included, accumulate and update messages.
                     if chunk.text:
+                        last_chunk_time = time.time()
                         full_response += chunk.text
                         new_chunks = split_msg(full_response)
 
@@ -693,6 +691,8 @@ async def handle_message(message):
                     print(f"Error processing chunk: {e}")
                     continue
             else:
+                break
+            if timeout_occurred:
                 break
 
         # Finalize all messages by removing the animation icon.
