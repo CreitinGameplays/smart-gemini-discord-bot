@@ -634,20 +634,18 @@ async def handle_message(message):
                 return None
 
         # Process Gemini response
-        last_chunk_time = time.time()
         while True:
+            try:
+                chunk = await asyncio.wait_for(asyncio.to_thread(next, response_stream), timeout=60)
+            except asyncio.TimeoutError:
+                await bot_message.edit(content="<:aw_snap:1379058439963017226> Sorry, the API did not return any data for over 60 seconds. Please try again.")
+                await asyncio.sleep(8)
+                await bot_message.delete()
             for chunk in response_stream:
-                # Check for timeout before processing the chunk
-                if time.time() - last_chunk_time > 60:
-                    await bot_message.edit(content="<:aw_snap:1379058439963017226> Sorry, the API did not return any data in over 60 seconds. Please try again.")
-                    await asyncio.sleep(8)
-                    await bot_message.delete()
-                    break 
                 try:
                     # If text is included, accumulate and update messages.
                     if chunk.text:
                         full_response += chunk.text
-                        last_chunk_time = time.time()
                         new_chunks = split_msg(full_response)
 
                         for i in range(len(new_chunks)):
