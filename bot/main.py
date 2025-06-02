@@ -711,10 +711,7 @@ async def handle_message(message):
         response_stream_iter = iter(response_stream)
         while True:
             try:
-                chunk = await asyncio.wait_for(
-                    asyncio.get_event_loop().run_in_executor(None, next, response_stream_iter),
-                    timeout=60
-                )
+                chunk = await asyncio.wait_for(asyncio.to_thread(next, response_stream), timeout=60)
             except asyncio.TimeoutError:
                 await bot_message.edit(content="<:aw_snap:1379058439963017226> Sorry, the API did not return any response for over 60 seconds. Please try again.")
                 await asyncio.sleep(8)
