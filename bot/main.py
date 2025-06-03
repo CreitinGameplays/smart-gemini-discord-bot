@@ -159,7 +159,7 @@ intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
 
-bot = discord.AutoShardedBot(intents=intents, shard_count=4)
+bot = discord.AutoShardedBot(intents=intents, shard_count=2)
 
 # add cogs
 cogs_list = [
@@ -236,18 +236,32 @@ def clean_result(result):
             pass
     return result
 
-async def check_response_timeout(bot_message, timeout=60):
-    await asyncio.sleep(timeout)
+async def check_response_timeout(bot_message, timeout=60, check_interval=5):
+    initial_content = bot_message.content
+    elapsed = 0
+
+    while elapsed < timeout:
+        await asyncio.sleep(check_interval)
+        elapsed += check_interval
+        try:
+            # Refetch the latest version of the message.
+            latest_message = await bot_message.channel.fetch_message(bot_message.id)
+        except Exception as e:
+            print(f"Error refetching message: {e}")
+            break
+        if latest_message.content != initial_content:
+            return
+
     try:
-        fresh_message = await bot_message.channel.fetch_message(bot_message.id)
-        creation = fresh_message.created_at
-        edited = fresh_message.edited_at if fresh_message.edited_at else creation
-        if (edited - creation).total_seconds() < 5:
-            await fresh_message.edit(content=f"<:aw_snap:1379058439963017226> Sorry, the API did not return any data for over {timeout} seconds. Please try again.")
-            await asyncio.sleep(8)
-            await fresh_message.delete()
+        # If we get here, the message has not been updated over the timeout period.
+        latest_message = await bot_message.channel.fetch_message(bot_message.id)
+        await latest_message.edit(
+            content=f"<:aw_snap:1379058439963017226> Sorry, the API did not return updated data for over {timeout} seconds. Please try again."
+        )
+        await asyncio.sleep(8)
+        await latest_message.delete()
     except Exception as e:
-        print(f"Timeout error update failed: {e}")
+        print(f"Timeout handling failed: {e}")
 
 # Discord events
 @bot.event
