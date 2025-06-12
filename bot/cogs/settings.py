@@ -46,6 +46,7 @@ class ModelDropdown(discord.ui.Select):
     def __init__(self):
         options = [
             discord.SelectOption(label="gemini-2.5-pro-preview-05-06", description="Donator only", emoji="🔥"),
+            discord.SelectOption(label="gemini-2.5-pro-preview-06-05", description="Donator only", emoji="🔥"),
             discord.SelectOption(label="gemini-2.5-flash-preview-05-20", description="Standard model", emoji="<:gemini:1219726550195245127>"),
             discord.SelectOption(label="gemini-2.5-flash-preview-04-17", description="Standard model", emoji="<:gemini:1219726550195245127>"),
             discord.SelectOption(label="gemini-2.0-flash", description="Older model", emoji="<:gemini:1219726550195245127>"),
@@ -60,8 +61,8 @@ class ModelDropdown(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
         model = self.values[0]
         user_settings = db.bot_settings.find_one({"user_id": interaction.user.id}) or {}
-        # Check if the selected model is restricted.
-        if model == "gemini-2.5-pro-preview-05-06" and not user_settings.get("is_donator", False):
+        # Check if the selected model is restricted for donators.
+        if (model == "gemini-2.5-pro-preview-05-06" or model == "gemini-2.5-pro-preview-06-05") and not user_settings.get("is_donator", False):
             await interaction.response.send_message("<:info:1220157026739552296> This model is only available for donators.", ephemeral=True)
             return
         db.bot_settings.update_one(
