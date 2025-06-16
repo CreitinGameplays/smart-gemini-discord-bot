@@ -45,7 +45,7 @@ gcloud config set project YOUR_GOOGLE_CLOUD_PROJECT_ID
 
 1. **Clone the repository:**
     ```sh
-    git clone https://github.com/CreitinGameplays123/smart-gemini-discord-bot.git
+    git clone https://github.com/CreitinGameplays/smart-gemini-discord-bot.git
     cd smart-gemini-discord-bot
     ```
 
