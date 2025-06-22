@@ -386,18 +386,37 @@ async def handle_message(message):
                 mode="AUTO"
             )
         )
-        config = types.GenerateContentConfig(
-            temperature=temperature_setting,
-            top_p=0.95,
-            top_k=40,
-            max_output_tokens=8192,
-            response_mime_type="text/plain",
-            tools=[tool_python, tool_websearch, tool_imagine],
-            tool_config=tool_config,
-            system_instruction=[
-                types.Part.from_text(text=base_system_prompt.replace("TODAYTIME00", todayday2).replace("GEMINIMODELID", model_id))
-            ]
-        )
+        ### test 
+        if model_id != "gemini-2.0-flash":
+            config = types.GenerateContentConfig(
+                temperature=temperature_setting,
+                top_p=0.95,
+                top_k=40,
+                max_output_tokens=8192,
+                response_mime_type="text/plain",
+                tools=[tool_python, tool_websearch, tool_imagine],
+                tool_config=tool_config,
+                system_instruction=[
+                    types.Part.from_text(text=base_system_prompt.replace("TODAYTIME00", todayday2).replace("GEMINIMODELID", model_id))
+                ],
+                thinking_config = types.ThinkingConfig(
+                    thinking_budget=-1,
+                ),
+            )
+        else:
+            config = types.GenerateContentConfig(
+                temperature=temperature_setting,
+                top_p=0.95,
+                top_k=40,
+                max_output_tokens=8192,
+                response_mime_type="text/plain",
+                tools=[tool_python, tool_websearch, tool_imagine],
+                tool_config=tool_config,
+                system_instruction=[
+                    types.Part.from_text(text=base_system_prompt.replace("TODAYTIME00", todayday2).replace("GEMINIMODELID", model_id))
+                ]
+            )
+        ### 
         chat_contents = []
         # Add chat history (text)
         for m in channel_history:
