@@ -141,7 +141,7 @@ class Misc(commands.Cog):
         await ctx.defer()
         # Retrieve user's model from settings or use default.
         user_settings = db.bot_settings.find_one({"user_id": ctx.author.id})
-        model = user_settings.get("model") if user_settings and user_settings.get("model") else "gemini-2.5-flash-preview-05-20"
+        model = user_settings.get("model") if user_settings and user_settings.get("model") else "gemini-2.5-flash"
         temperature = user_settings.get("temperature") if user_settings and user_settings.get("temperature") else 0.6
         try:
             client = genai.Client(api_key=os.environ.get("GEMINI_KEY"))
