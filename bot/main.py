@@ -307,7 +307,7 @@ async def handle_message(message):
     user_settings = None
     ### USER DATABASE SETTINGS (default values) ###
     temperature_setting = 0.6
-    model_id = "gemini-2.5-flash-preview-05-20"
+    model_id = "gemini-2.5-flash"
     mention_author = True
 
     user_settings = db.bot_settings.find_one({"user_id": message.author.id})
