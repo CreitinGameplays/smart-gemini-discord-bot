@@ -146,7 +146,7 @@ class Settings(commands.Cog):
         try:
             user_settings = db.bot_settings.find_one({"user_id": ctx.author.id}) or {}
             temperature = user_settings.get("temperature", 0.6)
-            model = user_settings.get("model", "gemini-2.5-flash-preview-05-20")
+            model = user_settings.get("model", "gemini-2.5-flash")
             mention = user_settings.get("mention_author", True)
             
             embed = discord.Embed(
