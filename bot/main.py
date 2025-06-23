@@ -416,7 +416,7 @@ async def handle_message(message):
                     types.Part.from_text(text=base_system_prompt.replace("TODAYTIME00", todayday2).replace("GEMINIMODELID", model_id))
                 ]
             )
-        #### i hope this works
+        #### i hope this works :pray:
         chat_contents = []
         # Add chat history (text)
         for m in channel_history:
