@@ -298,7 +298,8 @@ async def on_message(message):
             await handle_message(message)
         else:
             return
-
+            
+# might need to update this to not use message intents, thanks to discord inconvenience
 async def handle_message(message):
     # simple logging
     log_channel_id = bot.get_channel(1221244563407114240)
