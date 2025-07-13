@@ -299,8 +299,7 @@ async def on_message(message):
             await handle_message(message)
         else:
             return
-            
-# might need to update this to not use message intents, thanks discord
+
 async def handle_message(message):
     # simple logging
     log_channel_id = bot.get_channel(1221244563407114240)
@@ -402,7 +401,7 @@ async def handle_message(message):
                     types.Part.from_text(text=base_system_prompt.replace("TODAYTIME00", todayday2).replace("GEMINIMODELID", model_id))
                 ],
                 thinking_config = types.ThinkingConfig(
-                    thinking_budget=-1,
+                    thinking_budget=-1, # does this actually work
                 ),
             )
         else:
