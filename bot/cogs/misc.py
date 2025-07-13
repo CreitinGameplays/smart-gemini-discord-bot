@@ -151,7 +151,17 @@ class Misc(commands.Cog):
                     parts=[types.Part.from_text(text=prompt)]
                 )
             ]
-            generate_config = types.GenerateContentConfig(temperature=temperature, response_mime_type="text/plain")
+            if model != "gemini-2.0-flash":
+                generate_config = types.GenerateContentConfig(
+                    temperature=temperature,
+                    response_mime_type="text/plain",
+                    thinking_config = types.ThinkingConfig(
+                        thinking_budget=-1, # dynamic thinking according to https://ai.google.dev/gemini-api/docs/thinking#set-budget
+                        include_thoughts=False
+                    ),
+                )
+            else:
+                generate_config = types.GenerateContentConfig(temperature=temperature, response_mime_type="text/plain")
             response_text = ""
             await ctx.respond("<a:gemini_sparkles:1321895555676504077> _ _")
             
