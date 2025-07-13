@@ -565,12 +565,25 @@ async def handle_message(message):
             role="user",
             parts=[types.Part.from_text(text=user_message)]
         ))
+        # bug: this is synchronous, so this will block other bot interaction commands
+        """
         response_stream = client.models.generate_content_stream(
             model=model_id,
             contents=chat_contents,
             config=config
         )
+        """
 
+        loop = asyncio.get_running_loop()
+        response_stream = await loop.run_in_executor(
+            None,
+            lambda: list(client.models.generate_content_stream(
+                model=model_id,
+                contents=chat_contents,
+                config=config
+            ))
+        )
+        
         full_response = ""
         message_chunks = []
         post_function_call = False
