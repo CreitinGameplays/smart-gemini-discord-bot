@@ -157,7 +157,7 @@ channel_histories = defaultdict(lambda: deque(maxlen=MAX_CHAT_HISTORY_MESSAGES))
 # Discord bot
 intents = discord.Intents.default()
 intents.messages = True
-intents.message_content = True
+#intents.message_content = True # supposed to still work without message intents, lets see
 
 bot = discord.AutoShardedBot(intents=intents, shard_count=2)
 
@@ -295,11 +295,12 @@ async def on_message(message):
             await asyncio.sleep(5)
     if bot.user in message.mentions or (message.reference and message.reference.resolved.author == bot.user):
         if message.channel.id in allowed_channels:
+            user_message = message.content.replace(f'<@{bot.user.id}>', '').strip() if message.content else "(None)"
             await handle_message(message)
         else:
             return
             
-# might need to update this to not use message intents, thanks to discord inconvenience
+# might need to update this to not use message intents, thanks discord
 async def handle_message(message):
     # simple logging
     log_channel_id = bot.get_channel(1221244563407114240)
