@@ -401,7 +401,8 @@ async def handle_message(message):
                     types.Part.from_text(text=base_system_prompt.replace("TODAYTIME00", todayday2).replace("GEMINIMODELID", model_id))
                 ],
                 thinking_config = types.ThinkingConfig(
-                    thinking_budget=-1, # does this actually work
+                    thinking_budget=-1, # dynamic thinking according to https://ai.google.dev/gemini-api/docs/thinking#set-budget
+                    include_thoughts=False
                 ),
             )
         else:
