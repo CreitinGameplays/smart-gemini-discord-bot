@@ -66,7 +66,7 @@ Keep in mind that you are a model still in development, this means you may make 
 """
 
 def return_system_prompt():
-    return base_system_prompt # this is so stupid shi
+    return base_system_prompt
 
 __all__ = [ # exporting
     'return_system_prompt'
