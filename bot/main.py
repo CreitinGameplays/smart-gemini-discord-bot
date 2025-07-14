@@ -61,7 +61,7 @@ attachment_histories = defaultdict(lambda: {
 })
 
 # SYSTEM PROMPT
-base_system_prompt = str(return_system_prompt)
+base_system_prompt = str(return_system_prompt())
 
 # TOOLS (new SDK format)
 tool_websearch = types.Tool(function_declarations=[
