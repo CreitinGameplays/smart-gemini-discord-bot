@@ -587,8 +587,8 @@ async def handle_message(message):
         
         full_response = ""
         message_chunks = []
-        post_function_call = False
         aggregated_wsearch_results = ""
+        view_for_continued_message = None
 
         # Process Gemini response
         while True:
@@ -600,12 +600,13 @@ async def handle_message(message):
                         new_chunks = split_msg(full_response)
 
                         for i in range(len(new_chunks)):
+                            current_view = view_for_continued_message if i == 0 and view_for_continued_message else discord.utils.MISSING
                             if i < len(message_chunks):
-                                await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                await message_chunks[i].edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>", view=current_view)
                                 await asyncio.sleep(0.8)
                             else:
                                 if i == 0:
-                                    await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>")
+                                    await bot_message.edit(content=new_chunks[i] + " <a:generatingslow:1246630905632653373>", view=current_view)
                                     await asyncio.sleep(0.8)
                                     message_chunks.append(bot_message)
                                 else:
@@ -637,6 +638,7 @@ async def handle_message(message):
                             python_result = await jupyter_manager.execute_code(code_text)
                             python_view = PythonResultView(result=code_text)
                             await tool_update_message.edit(content=f"-# Done <:checkmark0:1246546819710849144>", view=python_view)
+                            view_for_continued_message = python_view
                             function_response_part = types.Part.from_function_response(
                                 name="python",
                                 response={"result": python_result}
@@ -649,6 +651,7 @@ async def handle_message(message):
                             aggregated_wsearch_results += wsearch_result
                             web_view = WebSearchResultView(results=aggregated_wsearch_results)
                             await tool_update_message.edit(content='-# Reading results... <a:searchingweb:1246248294322147489>', view=web_view)
+                            view_for_continued_message = web_view
                             function_response_part = types.Part.from_function_response(
                                 name="browser",
                                 response={"result": f"USE_CITATION=YES\nONLINE_RESULTS={wsearch_result}"}
@@ -693,13 +696,14 @@ async def handle_message(message):
                         )
                         # Set up state for the next iteration of the while loop.
                         if was_mid_stream and fn.name in ["python", "browser"]:
-                            # The tool call created a new message that we want to continue generating from.
-                            fetched_tool_message = await message.channel.fetch_message(tool_update_message.id)
-                            full_response = fetched_tool_message.content
+                            # The tool call created a new message that we want to continue generating from. To remove the tool status text, we reset the response content.
+                            fetched_tool_message = await message.channel.fetch_message(tool_update_message.id) # We still need the message object
+                            full_response = ""
                             message_chunks = [fetched_tool_message]
                         else:
                             # Start fresh if tool was first action, or resume normally for imagine
                             full_response = current_response if was_mid_stream else ""
+                            view_for_continued_message = None
                         break
                 except json.JSONDecodeError as e:
                     logger.error(f"Skipping invalid JSON chunk: {e}")
@@ -714,7 +718,8 @@ async def handle_message(message):
         if message_chunks:
             for i, msg in enumerate(message_chunks):
                 try:
-                    await msg.edit(content=split_msg(full_response)[i])
+                    final_view = view_for_continued_message if i == 0 and view_for_continued_message else discord.utils.MISSING
+                    await msg.edit(content=split_msg(full_response)[i], view=final_view)
                 except Exception as e:
                     print(f"Error finalizing message {i}: {e}")
 
