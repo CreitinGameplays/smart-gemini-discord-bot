@@ -11,13 +11,21 @@ def get_version():
     Gets the version from a .version file, then from git tags for local dev.
     Falls back to a default version if all methods fail.
     """
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # Accommodate both local dev (.../bot/version.py) and Docker (/app/version.py) layouts
+    if os.path.basename(script_dir) == 'bot':
+        project_root = os.path.dirname(script_dir)
+    else:
+        project_root = script_dir
+
     version_file = os.path.join(project_root, '.version')
 
     # 1. Try to read from .version file (for deployments)
     if os.path.exists(version_file):
         with open(version_file, 'r') as f:
-            return f.read().strip()
+            version = f.read().strip()
+            if version:
+                return version
 
     # 2. Try to get version from git (for local development)
     try:
