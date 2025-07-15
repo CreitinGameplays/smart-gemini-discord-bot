@@ -615,12 +615,14 @@ async def handle_message(message):
 
                     if chunk.function_calls:
                         fn = chunk.function_calls[0]
-                        current_response = full_response  # save text up to here
+                        current_response = full_response  # Save text before the tool call
                         print(fn) # debug
 
                         # Determine which message to edit for tool status updates
                         tool_update_message = bot_message
-                        if full_response.strip():
+                        was_mid_stream = full_response.strip()
+
+                        if was_mid_stream:
                             if message_chunks:
                                 # Finalize the last message chunk by removing the thinking animation
                                 last_text_chunk_content = split_msg(full_response)[-1]
@@ -683,13 +685,21 @@ async def handle_message(message):
                             role="user",
                             parts=[function_response_part]
                         ))
-                        # Restart the stream with updated chat_contents; resume with accumulated text.
+                        # Restart the stream with updated chat_contents.
                         response_stream = client.models.generate_content_stream(
                             model=model_id,
                             contents=chat_contents,
                             config=config
                         )
-                        full_response = current_response  # resume collecting text
+                        # Set up state for the next iteration of the while loop.
+                        if was_mid_stream and fn.name in ["python", "browser"]:
+                            # The tool call created a new message that we want to continue generating from.
+                            fetched_tool_message = await message.channel.fetch_message(tool_update_message.id)
+                            full_response = fetched_tool_message.content
+                            message_chunks = [fetched_tool_message]
+                        else:
+                            # Start fresh if tool was first action, or resume normally for imagine
+                            full_response = current_response if was_mid_stream else ""
                         break
                 except json.JSONDecodeError as e:
                     logger.error(f"Skipping invalid JSON chunk: {e}")
