@@ -29,6 +29,6 @@ def get_version():
         return git_version
     except (subprocess.CalledProcessError, FileNotFoundError):
         # 3. Fallback if all else fails
-        return "v1.0.0-nogit"
+        return "null"
 
 __version__ = get_version()
