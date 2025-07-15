@@ -36,6 +36,9 @@ class JupyterManager:
         self._run_subprocess([VENV_PIP, "install", "--upgrade", "pip"])
         self._run_subprocess([VENV_PIP, "install", "jupyter_client", "ipykernel"])
         print("Jupyter packages installed.")
+        print("Registering kernel spec...")
+        self._run_subprocess([VENV_PYTHON, "-m", "ipykernel", "install", "--user", "--name", "python3", "--display-name", "Python 3 (Bot Env)"])
+        print("Kernel spec registered.")
 
     async def install_library(self, library_name: str):
         """Installs a Python library into the virtual environment."""
@@ -57,7 +60,7 @@ class JupyterManager:
             return
 
         print("Starting Jupyter kernel...")
-        self.kernel_manager = KernelManager(kernel_name='python3', python_path=VENV_PYTHON)
+        self.kernel_manager = KernelManager(kernel_name='python3')
         self.kernel_manager.start_kernel()
         self.client = self.kernel_manager.client()
         self.client.start_channels()
