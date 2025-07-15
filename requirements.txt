@@ -14,3 +14,4 @@ pydub
 pymongo
 pymongo[srv]
 psutil
+jupyter-client
