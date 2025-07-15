@@ -1,5 +1,6 @@
 import discord
 import aiofiles
+from discord.ext import commands
 import asyncio
 import os
 import sys
@@ -23,6 +24,7 @@ from google.genai import Client, types
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 # import everything from tools.py and config.py
 from tools import *
+from jupyter_manager import setup_jupyter, get_jupyter_manager
 from config import return_system_prompt
 
 # mongodb will be useful here
@@ -225,17 +227,17 @@ def extract_youtube_url(text):
 async def restart_bot():
     os.execv(sys.executable, ['python'] + sys.argv)
 
-# Clean result function
-def clean_result(result):
-    if isinstance(result, str):
-        try:
-            result_dict = ast.literal_eval(result)
-            if isinstance(result_dict, dict):
-                return result_dict
-        except Exception:
-            pass
-    return result
-
+@bot.slash_command(name="install_lib", description="Install a Python library in the Jupyter environment (owner only).")
+@commands.is_owner()
+async def install_lib(ctx: discord.ApplicationContext, library: str):
+    """Installs a library in the bot's Jupyter environment."""
+    await ctx.defer(ephemeral=True)
+    jupyter_manager = get_jupyter_manager()
+    result = await jupyter_manager.install_library(library)
+    if len(result) > 1900:
+        result = result[:1900] + "..."
+    await ctx.respond(f"Installation result for `{library}`:\n{result}", ephemeral=True)
+    
 async def check_response_timeout(bot_message, timeout=60, check_interval=5):
     initial_content = bot_message.content
     elapsed = 0
@@ -271,6 +273,16 @@ async def on_ready():
     msg = discord.Game("Back to life! Made by Creitin Gameplays! 🌟")
     await bot.change_presence(status=discord.Status.online, activity=msg)
     print(f'Logged in as {bot.user}!')
+
+@bot.event
+async def on_application_command_error(ctx: discord.ApplicationContext, error: discord.DiscordException):
+    """Global error handler for application commands."""
+    if isinstance(error, commands.NotOwner):
+        await ctx.respond("You are not authorized to use this command.", ephemeral=True)
+    else:
+        # Log the error for debugging
+        logger.error(f"An error occurred in command '{ctx.command.qualified_name}':\n{traceback.format_exc()}")
+        await ctx.respond(f"<:error_icon:1295348741058068631> An unexpected error occurred. Please check the logs.", ephemeral=True)
 
 @bot.event
 async def on_message(message):
@@ -608,13 +620,13 @@ async def handle_message(message):
                         if fn.name == "python":
                             code_text = fn.args.get('code_text', '')
                             await bot_message.edit(content=f"-# Executing... <a:brackets:1300121114869235752>")
-                            python_result = await exec_python(code_text)
+                            jupyter_manager = get_jupyter_manager()
+                            python_result = await jupyter_manager.execute_code(code_text)
                             python_view = PythonResultView(result=code_text)
                             await bot_message.edit(content=f"-# Done <a:brackets:1300121114869235752>", view=python_view)
-                            cleaned_result = clean_result(python_result)
                             function_response_part = types.Part.from_function_response(
                                 name="python",
-                                response={"result": cleaned_result}
+                                response={"result": python_result}
                             )
                         elif fn.name == "browser":
                             q = fn.args.get('q', '')
@@ -691,6 +703,7 @@ async def handle_message(message):
 
 # Start the bot
 try:
+    setup_jupyter()
     bot.run(bot_token)
 except Exception as e:
     print(f'Error starting the bot: {e}')

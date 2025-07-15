@@ -1,4 +1,0 @@
-ipykernel
-asyncio
-numpy
-pamdas

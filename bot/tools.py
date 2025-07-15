@@ -2,7 +2,6 @@ import asyncio
 import aiohttp
 import logging
 import traceback
-import textwrap
 import io
 import sys
 import random
@@ -145,42 +144,12 @@ async def imagine(img_prompt: str, ar: str, author_id: int):
         img_info_var.update({"is_error": 1, "img_error_msg": f"{e}"})
         return img_info_var
 
-# code execution
-async def exec_python(code):
-    # Create input file
-    input_data = {"code": textwrap.dedent(code)}
-    with open("input.json", "w") as f:
-        json.dump(input_data, f)
-    
-    try:
-        # Run the Docker container (replace with your actual image name)
-        process = await asyncio.create_subprocess_exec(
-            "docker", "run", "--rm", "-v", f"{os.getcwd()}:/app", "code_execution",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout, stderr = await process.communicate()
-        if stderr:
-            print(f"Docker error: {stderr.decode()}")
-            return "An error occurred while running the code execution environment."
-
-        # Read output file
-        with open("output.json", "r") as f:
-            output_data = json.load(f)
-        result = output_data.get("result", "No result.")
-        return result
-
-    finally:
-        os.remove("input.json")  # Clean up
-        if os.path.exists("output.json"): os.remove("output.json")
-
 # export
 __all__ = [
     'search_brave',
     'fetch_snippet',
     'browser',
-    'imagine',
-    'exec_python'
+    'imagine'
 ]
 
 # am i missing something?
