@@ -7,8 +7,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends git ffmpeg && \
  
 COPY . .
  
+# Now that the .git directory is present, generate the version file.
 RUN git describe --tags --always --dirty > .version
+ 
 RUN pip install --no-cache-dir -r requirements.txt
+ 
 RUN rm -rf ./.git
  
 CMD ["python", "bot/main.py"]
