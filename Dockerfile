@@ -1,13 +1,14 @@
 FROM python:3.10-slim
 
 WORKDIR /app
-
-COPY requirements.txt .
-RUN apt update && apt install -y git
-RUN apt install ffmpeg -y
-RUN pip install --no-cache-dir -r requirements.txt
+ 
+RUN apt-get update && apt-get install -y --no-install-recommends git ffmpeg && \
+    rm -rf /var/lib/apt/lists/*
+ 
+COPY . .
+ 
 RUN git describe --tags --always --dirty > .version
-
-COPY bot/ .
-
-CMD ["python", "main.py"]
+RUN pip install --no-cache-dir -r requirements.txt
+RUN rm -rf ./.git
+ 
+CMD ["python", "bot/main.py"]

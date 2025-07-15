@@ -1,6 +1,11 @@
 import subprocess
 import os
 
+"""
+git tag -a vx.x.x -m "Release version x.x.x"
+git push origin x.x.x
+"""
+
 def get_version():
     """
     Gets the version from a .version file, then from git tags for local dev.
