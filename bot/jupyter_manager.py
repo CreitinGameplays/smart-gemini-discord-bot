@@ -34,7 +34,7 @@ class JupyterManager:
         
         print("Installing/upgrading jupyter_client and ipykernel...")
         self._run_subprocess([VENV_PIP, "install", "--upgrade", "pip"])
-        self._run_subprocess([VENV_PIP, "install", "jupyter_client", "ipykernel"])
+        self._run_subprocess([VENV_PIP, "install", "jupyter_client", "ipykernel", "nest_asyncio"])
         print("Jupyter packages installed.")
         print("Registering kernel spec...")
         self._run_subprocess([VENV_PYTHON, "-m", "ipykernel", "install", "--user", "--name", "python3", "--display-name", "Python 3 (Bot Env)"])
@@ -119,9 +119,13 @@ class JupyterManager:
             print("Kernel not running. Starting it now.")
             self.start_kernel()
         
+        # Prepend nest_asyncio to allow asyncio.run() within the already running event loop
+        # managed by ipykernel.
+        patched_code = f"import nest_asyncio\nnest_asyncio.apply()\n{code}"
+
         loop = asyncio.get_running_loop()
         try:
-            result = await loop.run_in_executor(None, self._execute_sync, code, timeout)
+            result = await loop.run_in_executor(None, self._execute_sync, patched_code, timeout)
             return result if result else "Code executed with no output."
         except Exception as e:
             return f"An error occurred during execution: {e}"
