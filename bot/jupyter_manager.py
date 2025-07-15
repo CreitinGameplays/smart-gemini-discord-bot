@@ -121,7 +121,7 @@ class JupyterManager:
 
         loop = asyncio.get_running_loop()
         try:
-            result = await loop.run_in_executor(None, self._execute_sync, timeout)
+            result = await loop.run_in_executor(None, self._execute_sync, code, timeout)
             return result if result else "Code executed with no output."
         except Exception as e:
             return f"An error occurred during execution: {e}"
