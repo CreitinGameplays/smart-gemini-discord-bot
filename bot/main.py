@@ -626,7 +626,7 @@ async def handle_message(message):
                                 last_text_chunk_content = split_msg(full_response)[-1]
                                 await message_chunks[-1].edit(content=last_text_chunk_content)
                             # Create a new, temporary message for tool status
-                            tool_update_message = await message.reply(content="-# Thinking... <a:gemini_sparkles:1321895555676504077>", mention_author=mention_author)
+                            tool_update_message = await message.reply(content="-# <a:gemini_sparkles:1321895555676504077>", mention_author=mention_author)
 
                         if fn.name == "python":
                             code_text = fn.args.get('code_text', '')
@@ -634,7 +634,7 @@ async def handle_message(message):
                             jupyter_manager = get_jupyter_manager()
                             python_result = await jupyter_manager.execute_code(code_text)
                             python_view = PythonResultView(result=code_text)
-                            await tool_update_message.edit(content=f"-# Done <a:brackets:1300121114869235752>", view=python_view)
+                            await tool_update_message.edit(content=f"-# Done <:checkmark0:1246546819710849144>", view=python_view)
                             function_response_part = types.Part.from_function_response(
                                 name="python",
                                 response={"result": python_result}
