@@ -6,12 +6,10 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends git && \
     rm -rf /var/lib/apt/lists/*
 
-
 ARG RAILWAY_GIT_COMMIT_SHA
 RUN git clone https://github.com/CreitinGameplays/smart-gemini-discord-bot .
 RUN if [ -n "$RAILWAY_GIT_COMMIT_SHA" ]; then git checkout $RAILWAY_GIT_COMMIT_SHA; fi
 RUN git describe --tags --always --dirty > .version
-
 
 # --- Final Stage ---
 FROM python:3.10-slim
