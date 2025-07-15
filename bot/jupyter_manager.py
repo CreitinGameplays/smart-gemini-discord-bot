@@ -118,14 +118,10 @@ class JupyterManager:
         if not self.client or not self.kernel_manager.is_alive():
             print("Kernel not running. Starting it now.")
             self.start_kernel()
-        
-        # Prepend nest_asyncio to allow asyncio.run() within the already running event loop
-        # managed by ipykernel.
-        patched_code = f"import nest_asyncio\nnest_asyncio.apply()\n{code}"
 
         loop = asyncio.get_running_loop()
         try:
-            result = await loop.run_in_executor(None, self._execute_sync, patched_code, timeout)
+            result = await loop.run_in_executor(None, self._execute_sync, timeout)
             return result if result else "Code executed with no output."
         except Exception as e:
             return f"An error occurred during execution: {e}"
