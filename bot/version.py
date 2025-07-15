@@ -3,15 +3,19 @@ import os
 
 def get_version():
     """
-    Gets the version from git tags.
-    Falls back to a default version if git is not available or it fails.
+    Gets the version from a .version file, then from git tags for local dev.
+    Falls back to a default version if all methods fail.
     """
-    try:
-        # The root of the git repository is one level up from the 'bot' directory,
-        # where the .git folder is located.
-        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    version_file = os.path.join(project_root, '.version')
 
-        # Run git describe to get a version string
+    # 1. Try to read from .version file (for deployments)
+    if os.path.exists(version_file):
+        with open(version_file, 'r') as f:
+            return f.read().strip()
+
+    # 2. Try to get version from git (for local development)
+    try:
         git_version = subprocess.check_output(
             ['git', 'describe', '--tags', '--always', '--dirty'],
             cwd=project_root,
@@ -19,7 +23,7 @@ def get_version():
         ).strip().decode('utf-8')
         return git_version
     except (subprocess.CalledProcessError, FileNotFoundError):
-        # Fallback if git is not installed or not a git repo
+        # 3. Fallback if all else fails
         return "v1.0.0-nogit"
 
 __version__ = get_version()
