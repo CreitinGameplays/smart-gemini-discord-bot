@@ -13,7 +13,7 @@ def get_version():
 
         # Run git describe to get a version string
         git_version = subprocess.check_output(
-            ['git', 'describe', '--tags', '---always', '--dirty'],
+            ['git', 'describe', '--tags', '--always', '--dirty'],
             cwd=project_root,
             stderr=subprocess.DEVNULL
         ).strip().decode('utf-8')
