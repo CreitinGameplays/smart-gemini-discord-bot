@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && \
 
 COPY --from=builder /app/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY --from=builder /app/bot/ .
+COPY --from=builder /app/bot/ ./bot/
 COPY --from=builder /app/.version .
 
-CMD ["python", "main.py"]
+CMD ["python", "bot/main.py"]
