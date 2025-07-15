@@ -617,13 +617,24 @@ async def handle_message(message):
                         fn = chunk.function_calls[0]
                         current_response = full_response  # save text up to here
                         print(fn) # debug
+
+                        # Determine which message to edit for tool status updates
+                        tool_update_message = bot_message
+                        if full_response.strip():
+                            if message_chunks:
+                                # Finalize the last message chunk by removing the thinking animation
+                                last_text_chunk_content = split_msg(full_response)[-1]
+                                await message_chunks[-1].edit(content=last_text_chunk_content)
+                            # Create a new, temporary message for tool status
+                            tool_update_message = await message.reply(content="-# Thinking... <a:gemini_sparkles:1321895555676504077>", mention_author=mention_author)
+
                         if fn.name == "python":
                             code_text = fn.args.get('code_text', '')
-                            await bot_message.edit(content=f"-# Executing... <a:brackets:1300121114869235752>")
+                            await tool_update_message.edit(content=f"-# Executing... <a:brackets:1300121114869235752>")
                             jupyter_manager = get_jupyter_manager()
                             python_result = await jupyter_manager.execute_code(code_text)
                             python_view = PythonResultView(result=code_text)
-                            await bot_message.edit(content=f"-# Done <a:brackets:1300121114869235752>", view=python_view)
+                            await tool_update_message.edit(content=f"-# Done <a:brackets:1300121114869235752>", view=python_view)
                             function_response_part = types.Part.from_function_response(
                                 name="python",
                                 response={"result": python_result}
@@ -631,11 +642,11 @@ async def handle_message(message):
                         elif fn.name == "browser":
                             q = fn.args.get('q', '')
                             num = fn.args.get('num', 15)
-                            await bot_message.edit(content=f'-# Searching \'{q}\' <a:searchingweb:1246248294322147489>')
+                            await tool_update_message.edit(content=f'-# Searching \'{q}\' <a:searchingweb:1246248294322147489>')
                             wsearch_result = await browser(q, num)
                             aggregated_wsearch_results += wsearch_result
                             web_view = WebSearchResultView(results=aggregated_wsearch_results)
-                            await bot_message.edit(content='-# Reading results... <a:searchingweb:1246248294322147489>', view=web_view)
+                            await tool_update_message.edit(content='-# Reading results... <a:searchingweb:1246248294322147489>', view=web_view)
                             function_response_part = types.Part.from_function_response(
                                 name="browser",
                                 response={"result": f"USE_CITATION=YES\nONLINE_RESULTS={wsearch_result}"}
@@ -643,22 +654,26 @@ async def handle_message(message):
                         elif fn.name == "imagine":
                             prompt = fn.args.get('prompt', '')
                             ar = fn.args.get('ar', '1:1')
-                            await bot_message.edit(content="-# Generating Image... <a:gemini_sparkles:1321895555676504077>")
+                            await tool_update_message.edit(content="-# Generating Image... <a:gemini_sparkles:1321895555676504077>")
                             imagine_result = await imagine(prompt, ar, message.author.id)
                             if imagine_result["is_error"] == 1:
-                                await bot_message.edit(content='-# An Error Occurred <:error_icon:1295348741058068631>')
+                                await tool_update_message.edit(content='-# An Error Occurred <:error_icon:1295348741058068631>')
                                 function_response_part = types.Part.from_function_response(
                                     name="imagine",
                                     response={"result": f"IMAGE_GENERATED=NO\nERROR_MSG=Error occurred: {imagine_result['img_error_msg']}"}
                                 )
                             else:
-                                await bot_message.edit(content="-# Done <:checkmark:1220809843414270102>")
                                 await message.reply(file=discord.File(imagine_result["filename"]), mention_author=mention_author)
                                 os.remove(imagine_result["filename"])
                                 function_response_part = types.Part.from_function_response(
                                     name="imagine",
                                     response={"result": "IMAGE_GENERATED=YES"}
                                 )
+                                # Clean up the status message
+                                if tool_update_message != bot_message:
+                                    await tool_update_message.delete()
+                                else:
+                                    await tool_update_message.edit(content="-# Done <:checkmark:1220809843414270102>")
                         # Append the function call and its result to the history.
                         chat_contents.append(types.Content(
                             role="model",
