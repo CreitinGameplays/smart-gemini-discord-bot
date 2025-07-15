@@ -9,7 +9,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends git && \
 ARG RAILWAY_GIT_COMMIT_SHA
 RUN git clone https://github.com/CreitinGameplays/smart-gemini-discord-bot .
 
-# Explicitly fetch all tags and unshallow the repository to ensure git describe works
 RUN git fetch --prune --unshallow --tags
 
 RUN if [ -n "$RAILWAY_GIT_COMMIT_SHA" ]; then git checkout $RAILWAY_GIT_COMMIT_SHA; fi
