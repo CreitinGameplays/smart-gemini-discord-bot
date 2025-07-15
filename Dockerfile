@@ -15,7 +15,7 @@ RUN [ -s .version ] || (echo "ERROR: .version file is empty or not created." && 
 
 # --- Final Stage --- 
 FROM python:3.10-slim
-
+ 
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && \
