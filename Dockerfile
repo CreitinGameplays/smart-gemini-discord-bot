@@ -13,7 +13,7 @@ RUN git describe --tags --always --dirty > .version
 
 RUN [ -s .version ] || (echo "ERROR: .version file is empty or not created." && exit 1)
 
-# --- Final Stage ---
+# --- Final Stage --- 
 FROM python:3.10-slim
 
 WORKDIR /app
