@@ -146,20 +146,33 @@ async def imagine(img_prompt: str, ar: str, author_id: int):
         return img_info_var
 
 # code execution
-def exec_python(code):
-    code = textwrap.dedent(code)
-    print(code)
-    buffer = io.StringIO()
-    sys.stdout = buffer
+async def exec_python(code):
+    # Create input file
+    input_data = {"code": textwrap.dedent(code)}
+    with open("input.json", "w") as f:
+        json.dump(input_data, f)
+    
     try:
-        exec(code)
-        output = buffer.getvalue()
-        print('output:' + output)
-        return output
-    except Exception as e:
-        return f"An error occurred: {e}"
+        # Run the Docker container (replace with your actual image name)
+        process = await asyncio.create_subprocess_exec(
+            "docker", "run", "--rm", "-v", f"{os.getcwd()}:/app", "code_execution",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await process.communicate()
+        if stderr:
+            print(f"Docker error: {stderr.decode()}")
+            return "An error occurred while running the code execution environment."
+
+        # Read output file
+        with open("output.json", "r") as f:
+            output_data = json.load(f)
+        result = output_data.get("result", "No result.")
+        return result
+
     finally:
-        sys.stdout = sys.__stdout__
+        os.remove("input.json")  # Clean up
+        if os.path.exists("output.json"): os.remove("output.json")
 
 # export
 __all__ = [

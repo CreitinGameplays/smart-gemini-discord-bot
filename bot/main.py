@@ -280,22 +280,11 @@ async def on_message(message):
     server_settings = db.bot_settings.find_one({"server_id": message.guild.id})
     allowed_channels = server_settings.get("channels", []) if server_settings else []
 
-    channel_id = message.channel.id
     if message.author == bot.user:
         return
-    today1 = datetime.datetime.now()
-    todayhour1 = f'{today1.hour}h:{today1.minute}m:{today1.second}s'
-    if message.content.startswith('!r'):
-        if message.author.id in allowed_ids:
-            await message.reply(f'`{message.author.name}, restarting bot...`')
-            await asyncio.sleep(0.5)
-            await restart_bot()
-        else:
-            print("user not allowed to run !r")
-            await asyncio.sleep(5)
+
     if bot.user in message.mentions or (message.reference and message.reference.resolved.author == bot.user):
         if message.channel.id in allowed_channels:
-            user_message = message.content.replace(f'<@{bot.user.id}>', '').strip() if message.content else "(None)"
             await handle_message(message)
         else:
             return
@@ -619,7 +608,7 @@ async def handle_message(message):
                         if fn.name == "python":
                             code_text = fn.args.get('code_text', '')
                             await bot_message.edit(content=f"-# Executing... <a:brackets:1300121114869235752>")
-                            python_result = exec_python(code_text)
+                            python_result = await exec_python(code_text)
                             python_view = PythonResultView(result=code_text)
                             await bot_message.edit(content=f"-# Done <a:brackets:1300121114869235752>", view=python_view)
                             cleaned_result = clean_result(python_result)
