@@ -141,6 +141,7 @@ async def imagine(img_prompt: str, ar: str, author_id: int):
         img_info_var.update({"filename": image_filename})
         return img_info_var
     except Exception as e:
+        print(f"Error when generating image: {e}")
         img_info_var.update({"is_error": 1, "img_error_msg": f"{e}"})
         return img_info_var
 
