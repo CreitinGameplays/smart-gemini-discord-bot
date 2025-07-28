@@ -19,7 +19,7 @@ from pymongo.server_api import ServerApi
 
 # Constants
 SEARCH_SNIPPET_SIZE = 6000
-image_model_id = "imagen-3.0-fast-generate-001" # will be premium cuz damn this costs 0.03 bucks per image generated 😭
+image_model_id = "imagen-4.0-fast-generate-preview-06-06" # will be premium cuz damn this costs 0.02 bucks per image generated 😭
 
 # ENV VARS
 THE_CREDENTIALS = os.environ.get("GCP_CREDS") # required for Imagen 3
